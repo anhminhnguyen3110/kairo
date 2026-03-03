@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* ============================================================
+   DESIGN TOKENS — Claude.ai exact palette
+   ============================================================ */
+@theme {
+  /* Fonts */
+  --font-sans: var(--font-geist-sans), 'Inter', system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
+
+  /* Sidebar — warm near-black, matches Claude.ai */
+  --color-sidebar-bg:     #1C1B18;
+  --color-sidebar-hover:  #28261F;
+  --color-sidebar-active: #35322A;
+  --color-sidebar-text:   #D9D5CE;
+  --color-sidebar-muted:  #736B62;
+  --color-sidebar-border: #28261F;
+
+  /* Chat surface — dark, matches Claude.ai dark mode */
+  --color-chat-bg:      #212121;
+  --color-chat-surface: #2A2A2A;
+  --color-chat-border:  #3A3A3A;
+
+  /* User message bubble */
+  --color-user-bubble: #2F2F2F;
+  --color-user-text:   #ECECEC;
+
+  /* Accent — Claude.ai terracotta/salmon (#CC785C is the brand asterisk color) */
+  --color-accent:       #CC785C;
+  --color-accent-hover: #B5614A;
+}
+
+/* ============================================================
+   BASE RESET
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #212121;
+  color: #ECECEC;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden; /* full-screen app shell */
+}
+
+/* Scrollbar — thin, subtle */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CCC8C1;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A8A29E;
+}
+
+/* Sidebar scrollbar → even more subtle */
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: #3C3836;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: #57534E;
+}
+
+/* ─── Thread title change animation ─────────────────────────────────────── */
+@keyframes title-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-title-in {
+  animation: title-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Smooth sidebar transitions (2-way) */
+.sidebar-text-appear {
+  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+}
+
+.sidebar-content-appear {
+  transition: opacity 0.2s ease-out;
+}
