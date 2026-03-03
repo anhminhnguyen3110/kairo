@@ -47,6 +47,12 @@ describe('useChatStore', () => {
       useChatStore.getState().setActiveThread(2);
       expect(useChatStore.getState().streamingContent).toBe('partial');
     });
+
+    it('does NOT clear streaming content when in saving state', () => {
+      useChatStore.setState({ streamingContent: 'done text', streamingStatus: 'saving' });
+      useChatStore.getState().setActiveThread(3);
+      expect(useChatStore.getState().streamingContent).toBe('done text');
+    });
   });
 
   describe('startStream()', () => {
@@ -131,6 +137,35 @@ describe('useChatStore', () => {
       expect(s.streamingContent).toBe('');
       expect(s.streamingToolEvents).toHaveLength(0);
       expect(s.abortController).toBeNull();
+    });
+
+    it('resets state when called from saving status', () => {
+      useChatStore.setState({ streamingContent: 'done text', streamingStatus: 'saving' });
+      useChatStore.getState().finalizeStream();
+      expect(useChatStore.getState().streamingStatus).toBe('idle');
+      expect(useChatStore.getState().streamingContent).toBe('');
+    });
+  });
+
+  describe('setSavingStatus()', () => {
+    it('transitions status to saving', () => {
+      const ac = new AbortController();
+      useChatStore.setState({ streamingStatus: 'streaming', abortController: ac as unknown as null });
+      useChatStore.getState().setSavingStatus();
+      expect(useChatStore.getState().streamingStatus).toBe('saving');
+    });
+
+    it('clears abortController', () => {
+      const ac = new AbortController();
+      useChatStore.setState({ abortController: ac as unknown as null });
+      useChatStore.getState().setSavingStatus();
+      expect(useChatStore.getState().abortController).toBeNull();
+    });
+
+    it('preserves streamingContent during saving', () => {
+      useChatStore.setState({ streamingContent: 'AI response text' });
+      useChatStore.getState().setSavingStatus();
+      expect(useChatStore.getState().streamingContent).toBe('AI response text');
     });
   });
 

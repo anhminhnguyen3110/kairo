@@ -39,6 +39,7 @@ interface ChatState {
   appendToolInput: (id: string, partialJson: string) => void;
   addStreamingArtifactId: (id: string) => void;
   finalizeStream: () => void;
+  setSavingStatus: () => void;
   abortStream: () => void;
   setStreamError: (message?: string) => void;
   addOptimisticMessage: (message: Message) => void;
@@ -73,7 +74,7 @@ export const useChatStore = create<ChatState>()(
         // router.push() causes ThreadContainer to mount and call setActiveThread
         // before the SSE stream finishes. Clearing here would make the streaming
         // bubble disappear and lose all tokens already received.
-        if (state.streamingStatus !== 'streaming') {
+        if (state.streamingStatus !== 'streaming' && state.streamingStatus !== 'saving') {
           state.streamingStatus = 'idle';
           state.streamingContent = '';
           state.streamingToolEvents = [];
@@ -153,6 +154,12 @@ export const useChatStore = create<ChatState>()(
         state.streamingArtifactIds = [];
         state.abortController = null;
         state.streamingSessionId = null;
+      }),
+
+    setSavingStatus: () =>
+      set((state) => {
+        state.streamingStatus = 'saving';
+        state.abortController = null;
       }),
 
     abortStream: () => {

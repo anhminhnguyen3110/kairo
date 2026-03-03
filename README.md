@@ -431,22 +431,34 @@ SSE event types handled:
 | Event | Action |
 |---|---|
 | `ping` | Ignored (Redis Stream seed event) |
-| `meta` | Set `confirmedThreadId`, update session ID |
+| `meta` | Set `confirmedThreadId`; if `title` present → `setQueriesData` patches thread cache in-memory (zero network cost) |
 | `content_block_start` | Add tool card or think card |
 | `content_block_delta` | Append token / thinking delta / tool input JSON |
 | `content_block_stop` | Resolve tool card with output |
-| `message_stop` | Save artifacts, trigger messages refetch |
+| `streaming_complete` | LLM done, DB write in progress → `setSavingStatus()` unlocks input, shows "Saving…" indicator |
+| `message_stop` | Navigate new thread; `invalidateQueries(messages).then(finalizeStream)` swaps bubble; refresh sidebar |
 | `token` | Append token to streaming bubble |
 | `tool_start` / `tool_end` | Legacy tool card lifecycle |
 | `artifact` | Open artifact panel |
 | `error` | Set stream error state |
-| `done` / `[DONE]` | Finalize stream, navigate to new thread if created |
+| `[DONE]` | No-op safety fence (all finalization moved to `message_stop`) |
+| `done` | Dead path — `toKairoEvents` consumes this internally; kept as no-op |
+
+#### Streaming status transitions
+
+```
+idle → streaming (startStream)
+         ↓ streaming_complete
+       saving (setSavingStatus) ← input unlocked, "Saving…" shown
+         ↓ invalidateQueries(messages) resolves
+       idle (finalizeStream) ← StreamingBubble → MessageBubble swap
+```
 
 ### State Management
 
 | Store | Responsibility |
 |---|---|
-| `chat-store.ts` | Streaming state, optimistic messages, tool events, artifacts-in-progress |
+| `chat-store.ts` | Streaming state (`idle`/`streaming`/`saving`/`error`), optimistic messages, tool events, artifacts-in-progress |
 | `model-store.ts` | Selected LLM provider + model, persisted to `localStorage` |
 | `ui-store.ts` | Sidebar collapsed, artifact panel open, web search toggle |
 | `artifact-store.ts` | Completed artifacts list, active artifact ID |

@@ -2,7 +2,7 @@ import type { AttachmentMeta, LlmProvider } from '@/types';
 
 // ─── Streaming ────────────────────────────────────────────────────────────────
 
-export type StreamingStatus = 'idle' | 'streaming' | 'error';
+export type StreamingStatus = 'idle' | 'streaming' | 'saving' | 'error';
 
 export interface StreamingToolEvent {
   id: string;

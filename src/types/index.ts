@@ -102,6 +102,7 @@ export type SSEEventType =
   | 'tool_start'
   | 'tool_end'
   | 'artifact'
+  | 'streaming_complete'
   | 'done'
   | 'error'
   | 'message_start'
@@ -114,7 +115,7 @@ export type SSEEventType =
 
 export interface SSEMetaEvent {
   type: 'meta';
-  data: { threadId: number; messageId: number };
+  data: { threadId: number; messageId: number; title?: string };
 }
 
 export interface SSEPingEvent {
@@ -244,6 +245,10 @@ export interface SSEMessageStopEvent {
   message_id?: number;
 }
 
+export interface SSEStreamingCompleteEvent {
+  type: 'streaming_complete';
+}
+
 export type SSEEvent =
   | SSEPingEvent
   | SSEMetaEvent
@@ -259,7 +264,8 @@ export type SSEEvent =
   | SSEContentBlockStopEvent
   | SSEMessageDeltaEvent
   | SSEMessageLimitEvent
-  | SSEMessageStopEvent;
+  | SSEMessageStopEvent
+  | SSEStreamingCompleteEvent;
 
 export interface PaginatedResponse<T> {
   data: T[];

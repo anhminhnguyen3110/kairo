@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useChatStore } from '@/stores/chat-store';
 import { useArtifactStore } from '@/stores/artifact-store';
 import { ToolEventCard } from './tool-event-card';
@@ -34,7 +34,7 @@ export function StreamingBubble() {
     );
   }
 
-  if (streamingStatus !== 'streaming') return null;
+  if (streamingStatus !== 'streaming' && streamingStatus !== 'saving') return null;
 
   return (
     <div className="py-6">
@@ -55,7 +55,9 @@ export function StreamingBubble() {
           <>
             <MarkdownRenderer content={streamingContent} />
             {}
-            <span className="inline-block w-0.5 h-4 bg-[#CC785C] ml-0.5 animate-pulse" />
+            {streamingStatus === 'streaming' && (
+              <span className="inline-block w-0.5 h-4 bg-[#CC785C] ml-0.5 animate-pulse" />
+            )}
           </>
         ) : (
           <span className="flex items-center gap-1">
@@ -72,6 +74,14 @@ export function StreamingBubble() {
           {streamingArtifacts.map((art) => (
             <ArtifactChip key={art.id} artifactId={art.id} title={art.title} type={art.type} />
           ))}
+        </div>
+      )}
+
+      {}
+      {streamingStatus === 'saving' && (
+        <div className="flex items-center gap-1.5 mt-3 text-[11px] text-neutral-500">
+          <Loader2 size={10} className="animate-spin" />
+          <span>Saving…</span>
         </div>
       )}
     </div>

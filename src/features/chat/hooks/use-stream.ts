@@ -7,7 +7,7 @@ import { useChatStore } from '@/stores/chat-store';
 import { useModelStore } from '@/stores/model-store';
 import { useUiStore } from '@/stores/ui-store';
 import { useArtifactStore } from '@/stores/artifact-store';
-import type { SSEEvent, Message } from '@/types';
+import type { SSEEvent, Message, Thread } from '@/types';
 import { getMessagesQueryKey } from './use-messages';
 import { THREADS_QUERY_KEY } from '@/features/threads/hooks/use-threads';
 import { filesApi } from '@/features/files/api/files-api';
@@ -25,6 +25,7 @@ export function useStream() {
     appendToolInput,
     addStreamingArtifactId,
     finalizeStream,
+    setSavingStatus,
     setStreamError,
     addOptimisticMessage,
     clearOptimisticMessages,
@@ -125,35 +126,6 @@ export function useStream() {
           const rawData = trimmed.slice('data:'.length).trim();
 
           if (rawData === '[DONE]') {
-            // Navigate to the new thread AFTER the stream fully completes.
-            // This prevents the mid-stream navigation splash where loading.tsx
-            // would flash in the middle of a streaming response.
-            if (!threadId && confirmedThreadId) {
-              if (onNewThread) {
-                onNewThread(confirmedThreadId);
-              } else {
-                router.push(`/threads/${confirmedThreadId}`);
-              }
-              setTimeout(() => {
-                qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
-              }, 100);
-            }
-
-            // Await the messages refetch before killing StreamingBubble.
-            // This prevents the visual "reload" where StreamingBubble disappears
-            // before the real MessageBubbles are ready to replace it.
-            // For new threads, clearOptimisticMessages is handled by
-            // NewChatContainer unmount to avoid the welcome-screen flash.
-            const finalMsgKey = confirmedThreadId ? getMessagesQueryKey(confirmedThreadId) : null;
-            if (finalMsgKey) {
-              void qc.invalidateQueries({ queryKey: finalMsgKey }).then(() => {
-                finalizeStream();
-                if (threadId) clearOptimisticMessages();
-              });
-            } else {
-              finalizeStream();
-              if (threadId) clearOptimisticMessages();
-            }
             return;
           }
 
@@ -249,11 +221,34 @@ export function useStream() {
               };
               const finalThreadId = stop.thread_id ?? confirmedThreadId;
 
-              if (finalThreadId) {
-                qc.invalidateQueries({ queryKey: getMessagesQueryKey(finalThreadId) });
+              // Navigate to a newly created thread before finalizing the stream
+              if (!threadId && finalThreadId) {
+                if (onNewThread) {
+                  onNewThread(finalThreadId);
+                } else {
+                  router.push(`/threads/${finalThreadId}`);
+                }
+                setTimeout(() => {
+                  void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
+                }, 100);
               }
+
+              // Refetch messages then swap StreamingBubble → real MessageBubbles
+              if (finalThreadId) {
+                void qc.invalidateQueries({ queryKey: getMessagesQueryKey(finalThreadId) }).then(
+                  () => {
+                    finalizeStream();
+                    if (threadId) clearOptimisticMessages();
+                  },
+                );
+              } else {
+                finalizeStream();
+                if (threadId) clearOptimisticMessages();
+              }
+
+              // Refresh sidebar (lastMessage preview, messageCount)
               if (threadId) {
-                qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
+                void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
               }
 
               if (stop.artifacts && stop.artifacts.length > 0) {
@@ -269,12 +264,10 @@ export function useStream() {
                 openArtifact(realArtifacts[realArtifacts.length - 1].id);
 
                 if (finalThreadId) {
-                  qc.invalidateQueries({ queryKey: ['artifacts', finalThreadId] });
+                  void qc.invalidateQueries({ queryKey: ['artifacts', finalThreadId] });
                 }
               }
 
-              // Do NOT call finalizeStream() here — wait for [DONE] to avoid
-              // StreamingBubble disappearing before MessageBubble refetch completes.
               break;
             }
 
@@ -288,14 +281,28 @@ export function useStream() {
             }
 
             case 'meta': {
-              confirmedThreadId = (event.data as { threadId: number }).threadId;
-              // If the server set a new title (first run), refresh both the sidebar
-              // list and the individual thread cache so the header updates too.
-              if ((event.data as { title?: string }).title) {
-                void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
-                void qc.invalidateQueries({ queryKey: ['threads', confirmedThreadId] });
+              // The SSE JSON is flat: { type: 'meta', threadId, messageId, title? }
+              const metaData = event as unknown as { threadId: number; title?: string };
+              confirmedThreadId = metaData.threadId;
+              if (metaData.title) {
+                const updatedTitle = metaData.title;
+                const tid = confirmedThreadId;
+                qc.setQueriesData({ queryKey: THREADS_QUERY_KEY }, (old: unknown) => {
+                  if (!old) return old;
+                  const data = old as { pages?: Array<{ data: Thread[] }> };
+                  if (!data.pages) return old;
+                  return {
+                    ...data,
+                    pages: data.pages.map((page) => ({
+                      ...page,
+                      data: page.data.map((t) => (t.id === tid ? { ...t, title: updatedTitle } : t)),
+                    })),
+                  };
+                });
+                qc.setQueryData<Thread>(['threads', tid], (old) =>
+                  old ? { ...old, title: updatedTitle } : old,
+                );
               }
-              // Navigation deferred to [DONE] — avoids mid-stream loading.tsx splash.
               break;
             }
 
@@ -345,22 +352,13 @@ export function useStream() {
               break;
             }
 
-            case 'done': {
-              const finalThreadId = confirmedThreadId;
-
-              // Kick off background invalidations so data is fresh by the time
-              // [DONE] fires. finalizeStream() is deferred until after the
-              // messages refetch completes (see [DONE] handler above).
-              if (finalThreadId) {
-                qc.invalidateQueries({
-                  queryKey: getMessagesQueryKey(finalThreadId),
-                });
-              }
-              if (threadId) {
-                qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
-              }
+            case 'streaming_complete': {
+              setSavingStatus();
               break;
             }
+
+            case 'done':
+              break;
           }
         }
       }
