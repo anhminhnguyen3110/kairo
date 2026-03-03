@@ -27,11 +27,7 @@ describe('ApiClientError', () => {
 
 // ─── apiClient (fetchBff) ─────────────────────────────────────────────────────
 
-const makeFetchMock = (
-  status: number,
-  body?: unknown,
-  headers?: Record<string, string>,
-) => {
+const makeFetchMock = (status: number, body?: unknown, headers?: Record<string, string>) => {
   return vi.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
@@ -125,22 +121,19 @@ describe('apiClient', () => {
 
     it('sets method to POST', async () => {
       await apiClient.post('/threads', { title: 'hello' });
-      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0][1] as RequestInit;
+      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
       expect(opts.method).toBe('POST');
     });
 
     it('serialises body as JSON', async () => {
       await apiClient.post('/threads', { title: 'hello' });
-      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0][1] as RequestInit;
+      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
       expect(opts.body).toBe('{"title":"hello"}');
     });
 
     it('omits body when none is provided', async () => {
       await apiClient.post('/logout');
-      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0][1] as RequestInit;
+      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
       expect(opts.body).toBeUndefined();
     });
   });
@@ -149,8 +142,7 @@ describe('apiClient', () => {
     it('sets method to PATCH', async () => {
       globalThis.fetch = makeFetchMock(200, { id: 1 });
       await apiClient.patch('/threads/1', { title: 'new' });
-      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock
-        .calls[0][1] as RequestInit;
+      const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
       expect(opts.method).toBe('PATCH');
     });
   });

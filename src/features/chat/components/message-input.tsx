@@ -134,7 +134,12 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
       // Pre-populate the per-thread cache so ThreadContainer renders instantly (no isLoading spinner)
       qc.setQueryData(['threads', newThread.id], newThread);
 
-      const attachmentsMeta: { fileId?: number; name: string; sizeBytes: number; mimeType: string }[] = [];
+      const attachmentsMeta: {
+        fileId?: number;
+        name: string;
+        sizeBytes: number;
+        mimeType: string;
+      }[] = [];
       const uploadedFileIds: number[] = [];
 
       if (filesToSend.length > 0) {
