@@ -16,16 +16,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Kairo',
   description: 'Kairo — AI Agent Chat Interface',
-  icons: {
-    icon: [{ url: '/kairo.svg', type: 'image/svg+xml' }],
-    shortcut: '/kairo.svg',
-    apple: '/kairo.svg',
-  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="icon" type="image/svg+xml" href="/kairo.svg?v=3" />
+        <link rel="shortcut icon" href="/kairo.svg?v=3" />
+        <link rel="apple-touch-icon" href="/kairo.svg?v=3" />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <Providers>{children}</Providers>
       </body>
