@@ -17,7 +17,9 @@ export const metadata: Metadata = {
   title: 'Kairo',
   description: 'Kairo — AI Agent Chat Interface',
   icons: {
-    icon: '/kairo.svg',
+    icon: [{ url: '/kairo.svg', type: 'image/svg+xml' }],
+    shortcut: '/kairo.svg',
+    apple: '/kairo.svg',
   },
 };
 
