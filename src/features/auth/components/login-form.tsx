@@ -37,8 +37,9 @@ export function LoginForm() {
     <div className="w-full max-w-sm">
       {}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#CC785C] mb-4">
-          <span className="text-white text-xl font-bold leading-none">✦</span>
+        <div className="inline-flex items-center justify-center mb-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/kairo.svg" alt="Kairo" width={48} height={48} />
         </div>
         <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
         <p className="mt-1 text-sm text-stone-400">Sign in to your account</p>
