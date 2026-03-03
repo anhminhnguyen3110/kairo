@@ -12,12 +12,21 @@ import { UserMenu } from './user-menu';
 import { KairoLogo } from '@/components/kairo-logo';
 
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, openSearch } = useUiStore();
+  const { sidebarOpen, toggleSidebar, openSearch, setIsMobile } = useUiStore();
   const setActiveThread = useChatStore((s) => s.setActiveThread);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useThreads();
+
+  // Detect mobile breakpoint and update store accordingly
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handle = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
+    handle(mq); // run immediately on mount
+    mq.addEventListener('change', handle as (e: MediaQueryListEvent) => void);
+    return () => mq.removeEventListener('change', handle as (e: MediaQueryListEvent) => void);
+  }, [setIsMobile]);
 
   const handleObserver = useCallback(
     (entries: IntersectionObserverEntry[]) => {

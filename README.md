@@ -172,95 +172,147 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ## Screenshots
 
-All screenshots live in [`docs/screenshots/`](docs/screenshots/) and GIF demos in [`docs/`](docs/).
-
 ### Authentication
-| Login | Register | Logged In |
-|---|---|---|
-| <img src="docs/screenshots/r1-01-login-page.png" width="290"> | <img src="docs/screenshots/r1-03-register-filled.png" width="290"> | <img src="docs/screenshots/r1-06-logged-in.png" width="290"> |
 
-<img src="docs/round-1.gif" width="720">
+![Login page](docs/screenshots/r1-01-login-page.png)
+
+![Register filled](docs/screenshots/r1-03-register-filled.png)
+
+![Logged in](docs/screenshots/r1-06-logged-in.png)
+
+![Authentication demo](docs/round-1.gif)
 
 ---
 
 ### Streaming Chat — First Message
-| Empty state | Typing | AI Responding |
-|---|---|---|
-| <img src="docs/screenshots/r2-01-home-empty.png" width="290"> | <img src="docs/screenshots/r2-02-message-typed.png" width="290"> | <img src="docs/screenshots/r2-04-ai-response.png" width="290"> |
 
-<img src="docs/round-2.gif" width="720">
+![Home empty state](docs/screenshots/r2-01-home-empty.png)
+
+![Message typed](docs/screenshots/r2-02-message-typed.png)
+
+![AI responding](docs/screenshots/r2-04-ai-response.png)
+
+![Streaming chat demo](docs/round-2.gif)
 
 ---
 
 ### Tool Cards — Web Search + Think
-| Search tool card | Search result | Collapsed cards |
-|---|---|---|
-| <img src="docs/screenshots/r3-03-web-search-tool-card.png" width="290"> | <img src="docs/screenshots/r3-04-web-search-result.png" width="290"> | <img src="docs/screenshots/r3-08-tool-cards-collapsed.png" width="290"> |
 
-<img src="docs/round-3.gif" width="720">
+![Web search tool card](docs/screenshots/r3-03-web-search-tool-card.png)
+
+![Web search result](docs/screenshots/r3-04-web-search-result.png)
+
+![Tool cards collapsed](docs/screenshots/r3-08-tool-cards-collapsed.png)
+
+![Tool cards demo](docs/round-3.gif)
 
 ---
 
 ### Artifacts — Live HTML Preview
-| Creating artifact | Code + Preview panel | Preview tab |
-|---|---|---|
-| <img src="docs/screenshots/r4-02-think-and-creating-artifact.png" width="290"> | <img src="docs/screenshots/r4-03-artifact-response.png" width="290"> | <img src="docs/screenshots/r4-04-artifact-preview-panel.png" width="290"> |
 
-<img src="docs/round-4.gif" width="720">
+![Creating artifact](docs/screenshots/r4-02-think-and-creating-artifact.png)
+
+![Artifact code + preview panel](docs/screenshots/r4-03-artifact-response.png)
+
+![Artifact preview tab](docs/screenshots/r4-04-artifact-preview-panel.png)
+
+![Artifacts demo](docs/round-4.gif)
 
 ---
 
 ### File Upload & Document Understanding
-| Attach dropdown | File chip | extract_document tool |
-|---|---|---|
-| <img src="docs/screenshots/r5-02-attach-dropdown.png" width="290"> | <img src="docs/screenshots/r5-03-file-attached-chip.png" width="290"> | <img src="docs/screenshots/r5-05-extract-doc-tool.png" width="290"> |
 
-<img src="docs/round-5.gif" width="720">
+![Attach dropdown](docs/screenshots/r5-02-attach-dropdown.png)
+
+![File chip attached](docs/screenshots/r5-03-file-attached-chip.png)
+
+![extract_document tool card](docs/screenshots/r5-05-extract-doc-tool.png)
+
+![File upload demo](docs/round-5.gif)
 
 ---
 
 ### Thread Management
-| Context menu | Rename | Cloned thread |
-|---|---|---|
-| <img src="docs/screenshots/r6-03-thread-context-menu.png" width="290"> | <img src="docs/screenshots/r6-04-thread-rename-input.png" width="290"> | <img src="docs/screenshots/r6-08-thread-cloned.png" width="290"> |
 
-<img src="docs/round-6.gif" width="720">
+![Thread context menu](docs/screenshots/r6-03-thread-context-menu.png)
+
+![Thread rename input](docs/screenshots/r6-04-thread-rename-input.png)
+
+![Cloned thread](docs/screenshots/r6-08-thread-cloned.png)
+
+![Thread management demo](docs/round-6.gif)
 
 ---
 
 ### AI Memory — Per-User Persistent
-| Writing memory | Memory confirmed | Recalling memory |
-|---|---|---|
-| <img src="docs/screenshots/r7-04-memory-written.png" width="290"> | <img src="docs/screenshots/r7-05-memory-scroll-bottom.png" width="290"> | <img src="docs/screenshots/r7-08-memory-recalled.png" width="290"> |
 
-<img src="docs/round-7.gif" width="720">
+![Writing memory](docs/screenshots/r7-04-memory-written.png)
+
+![Memory confirmed](docs/screenshots/r7-05-memory-scroll-bottom.png)
+
+![Memory recalled](docs/screenshots/r7-08-memory-recalled.png)
+
+![AI memory demo](docs/round-7.gif)
 
 ---
 
 ### Scroll UX — Jump-to-Bottom FAB
-| Bottom | Scrolled up | FAB visible | Back to bottom |
-|---|---|---|---|
-| <img src="docs/screenshots/r8-01-thread-bottom.png" width="215"> | <img src="docs/screenshots/r8-02-scrolled-up.png" width="215"> | <img src="docs/screenshots/r8-03-scroll-to-bottom-fab.png" width="215"> | <img src="docs/screenshots/r8-04-scrolled-to-bottom.png" width="215"> |
 
-<img src="docs/round-8.gif" width="720">
+![Thread bottom](docs/screenshots/r8-01-thread-bottom.png)
+
+![Scrolled up](docs/screenshots/r8-02-scrolled-up.png)
+
+![FAB visible](docs/screenshots/r8-03-scroll-to-bottom-fab.png)
+
+![Scrolled to bottom](docs/screenshots/r8-04-scrolled-to-bottom.png)
+
+![Scroll UX demo](docs/round-8.gif)
 
 ---
 
 ### Model Selector — 183+ Models
-| Current model | Dropdown | Search | Changed |
-|---|---|---|---|
-| <img src="docs/screenshots/r9-01-current-model.png" width="215"> | <img src="docs/screenshots/r9-05-models-list.png" width="215"> | <img src="docs/screenshots/r9-06-model-search-llama.png" width="215"> | <img src="docs/screenshots/r9-07-model-changed.png" width="215"> |
 
-<img src="docs/round-9.gif" width="720">
+![Current model](docs/screenshots/r9-01-current-model.png)
+
+![Model dropdown](docs/screenshots/r9-05-models-list.png)
+
+![Search for llama](docs/screenshots/r9-06-model-search-llama.png)
+
+![Model changed](docs/screenshots/r9-07-model-changed.png)
+
+![Model selector demo](docs/round-9.gif)
 
 ---
 
 ### Sign-out & Session Persistence
-| Signed in | Signed out | Re-login | Restored |
-|---|---|---|---|
-| <img src="docs/screenshots/r10-01-logged-in-state.png" width="215"> | <img src="docs/screenshots/r10-02-signed-out-login.png" width="215"> | <img src="docs/screenshots/r10-03-login-filled.png" width="215"> | <img src="docs/screenshots/r10-04-logged-in-again.png" width="215"> |
 
-<img src="docs/round-10.gif" width="720">
+![Logged in state](docs/screenshots/r10-01-logged-in-state.png)
+
+![Signed out login](docs/screenshots/r10-02-signed-out-login.png)
+
+![Login filled](docs/screenshots/r10-03-login-filled.png)
+
+![Logged in again](docs/screenshots/r10-04-logged-in-again.png)
+
+![Session persistence demo](docs/round-10.gif)
+
+---
+
+### Responsive Design — Mobile (375 px)
+
+At ≤ 767 px the sidebar collapses to a 60 px icon-only strip so the chat area fills the screen. Tapping the Kairo logo slides the full sidebar open as an overlay, then closes again automatically after selecting a thread.
+
+**Home — sidebar collapsed (icon-only)**
+![Mobile home — sidebar collapsed](docs/screenshots/mobile-01-home.png)
+
+**Sidebar open as overlay**
+![Mobile sidebar open overlay](docs/screenshots/mobile-02-sidebar-open.png)
+
+**Chat thread — full-width message area**
+![Mobile chat thread](docs/screenshots/mobile-03-chat-thread.png)
+
+**Login page**
+![Mobile login page](docs/screenshots/mobile-04-login.png)
 
 ## Quick Start — Local
 
