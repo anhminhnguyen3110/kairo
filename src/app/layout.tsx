@@ -16,6 +16,19 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: 'Kairo',
   description: 'Kairo — AI Agent Chat Interface',
+  openGraph: {
+    title: 'Kairo — AI Agent Chat Interface',
+    description: 'Chat with a powerful AI agent. Upload files, write code, visualize data — all in one place.',
+    url: 'https://fullstack-chat-agent-fe.vercel.app',
+    siteName: 'Kairo',
+    images: [{ url: 'https://fullstack-chat-agent-fe.vercel.app/kairo.svg', width: 120, height: 120, alt: 'Kairo logo' }],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary',
+    title: 'Kairo — AI Agent Chat Interface',
+    description: 'Chat with a powerful AI agent. Upload files, write code, visualize data — all in one place.',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

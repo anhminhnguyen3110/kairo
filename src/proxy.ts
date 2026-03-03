@@ -24,7 +24,8 @@ export function proxy(request: NextRequest) {
 
   if (!accessToken && !isPublicPath) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('next', pathname);
+    const search = request.nextUrl.search;
+    loginUrl.searchParams.set('next', pathname + search);
     return NextResponse.redirect(loginUrl);
   }
 

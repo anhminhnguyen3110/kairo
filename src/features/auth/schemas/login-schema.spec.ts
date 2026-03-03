@@ -22,7 +22,13 @@ describe('loginSchema', () => {
   it('rejects empty password', () => {
     const result = loginSchema.safeParse({ ...valid, password: '' });
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0].message).toBe('Password is required');
+    expect(result.error?.issues[0].message).toBe('Password must be at least 8 characters');
+  });
+
+  it('rejects password shorter than 8 characters', () => {
+    const result = loginSchema.safeParse({ ...valid, password: 'short' });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0].message).toBe('Password must be at least 8 characters');
   });
 
   it('rejects missing fields', () => {

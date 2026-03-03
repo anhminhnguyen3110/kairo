@@ -5,12 +5,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
+import { Eye, EyeOff } from 'lucide-react';
 import { registerSchema, type RegisterFormData } from '../schemas/register-schema';
 import { authApi } from '../api/auth-api';
+import { ApiClientError } from '@/lib/api-client';
+
+function getFriendlyRegisterError(err: unknown): string {
+  if (err instanceof ApiClientError) {
+    if (err.statusCode === 409) return 'An account with this email already exists.';
+    if (err.statusCode === 429) return 'Too many attempts. Please wait before trying again.';
+    return 'Service is temporarily unavailable. Please try again later.';
+  }
+  return err instanceof Error ? err.message : 'Registration failed';
+}
 
 export function RegisterForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const {
     register,
@@ -20,6 +33,8 @@ export function RegisterForm() {
     resolver: zodResolver(registerSchema),
   });
 
+  const clearError = () => { if (error) setError(null); };
+
   const onSubmit = async (data: RegisterFormData) => {
     setError(null);
     try {
@@ -27,7 +42,7 @@ export function RegisterForm() {
       router.push('/threads');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Registration failed');
+      setError(getFriendlyRegisterError(err));
     }
   };
 
@@ -54,7 +69,7 @@ export function RegisterForm() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {error && (
-          <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+          <div role="alert" className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
             {error}
           </div>
         )}
@@ -69,7 +84,10 @@ export function RegisterForm() {
             type="email"
             autoComplete="email"
             autoFocus
-            {...register('email')}
+            aria-required="true"
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'reg-email-error' : undefined}
+            {...register('email', { onChange: clearError })}
             className="
               w-full px-3.5 py-2.5 rounded-lg border text-sm text-stone-900
               bg-white placeholder:text-stone-400
@@ -79,7 +97,7 @@ export function RegisterForm() {
             placeholder="you@example.com"
             disabled={isSubmitting}
           />
-          {errors.email && <p className="mt-1.5 text-xs text-red-600">{errors.email.message}</p>}
+          {errors.email && <p id="reg-email-error" className="mt-1.5 text-xs text-red-600">{errors.email.message}</p>}
         </div>
 
         {}
@@ -87,22 +105,36 @@ export function RegisterForm() {
           <label htmlFor="password" className="block text-sm font-medium text-stone-300 mb-1.5">
             Password
           </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            {...register('password')}
-            className="
-              w-full px-3.5 py-2.5 rounded-lg border text-sm text-stone-900
-              bg-white placeholder:text-stone-400
-              border-stone-300 focus:border-[#CC785C] focus:ring-1 focus:ring-[#CC785C]/30
-              outline-none transition-colors disabled:opacity-50
-            "
-            placeholder="••••••••"
-            disabled={isSubmitting}
-          />
+          <div className="relative">
+            <input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              aria-required="true"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'reg-password-error' : undefined}
+              {...register('password', { onChange: clearError })}
+              className="
+                w-full px-3.5 py-2.5 pr-10 rounded-lg border text-sm text-stone-900
+                bg-white placeholder:text-stone-400
+                border-stone-300 focus:border-[#CC785C] focus:ring-1 focus:ring-[#CC785C]/30
+                outline-none transition-colors disabled:opacity-50
+              "
+              placeholder="••••••••"
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-400 hover:text-stone-600 transition-colors"
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
           {errors.password && (
-            <p className="mt-1.5 text-xs text-red-600">{errors.password.message}</p>
+            <p id="reg-password-error" className="mt-1.5 text-xs text-red-600">{errors.password.message}</p>
           )}
         </div>
 
@@ -114,22 +146,36 @@ export function RegisterForm() {
           >
             Confirm password
           </label>
-          <input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            {...register('confirmPassword')}
-            className="
-              w-full px-3.5 py-2.5 rounded-lg border text-sm text-stone-900
-              bg-white placeholder:text-stone-400
-              border-stone-300 focus:border-[#CC785C] focus:ring-1 focus:ring-[#CC785C]/30
-              outline-none transition-colors disabled:opacity-50
-            "
-            placeholder="••••••••"
-            disabled={isSubmitting}
-          />
+          <div className="relative">
+            <input
+              id="confirmPassword"
+              type={showConfirm ? 'text' : 'password'}
+              autoComplete="new-password"
+              aria-required="true"
+              aria-invalid={!!errors.confirmPassword}
+              aria-describedby={errors.confirmPassword ? 'reg-confirm-error' : undefined}
+              {...register('confirmPassword', { onChange: clearError })}
+              className="
+                w-full px-3.5 py-2.5 pr-10 rounded-lg border text-sm text-stone-900
+                bg-white placeholder:text-stone-400
+                border-stone-300 focus:border-[#CC785C] focus:ring-1 focus:ring-[#CC785C]/30
+                outline-none transition-colors disabled:opacity-50
+              "
+              placeholder="••••••••"
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirm((v) => !v)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3 text-stone-400 hover:text-stone-600 transition-colors"
+              aria-label={showConfirm ? 'Hide confirm password' : 'Show confirm password'}
+              tabIndex={-1}
+            >
+              {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
           {errors.confirmPassword && (
-            <p className="mt-1.5 text-xs text-red-600">{errors.confirmPassword.message}</p>
+            <p id="reg-confirm-error" className="mt-1.5 text-xs text-red-600">{errors.confirmPassword.message}</p>
           )}
         </div>
 

@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /api/
+Disallow: /threads
+Disallow: /chat
+Allow: /login
+Allow: /register
+
+Sitemap: https://fullstack-chat-agent-fe.vercel.app/sitemap.xml
