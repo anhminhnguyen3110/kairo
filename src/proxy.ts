@@ -7,7 +7,9 @@ const SKIP_PATTERNS = [
   /^\/favicon\.ico$/,
   /^\/api\/auth\//,
   /^\/api\/proxy\//,
-  /\.(?:svg|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|eot)$/i,
+  /\.(?:svg|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|eot|txt|xml)$/i,
+  /^\/robots\.txt$/,
+  /^\/sitemap.*\.xml$/,
 ];
 
 export function proxy(request: NextRequest) {
@@ -38,6 +40,6 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|eot)).*)',
+    '/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|.*\\.(?:svg|png|jpg|jpeg|gif|ico|webp|woff|woff2|ttf|eot|txt|xml)).*)',
   ],
 };
