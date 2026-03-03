@@ -14,6 +14,7 @@ function getFriendlyRegisterError(err: unknown): string {
   if (err instanceof ApiClientError) {
     if (err.statusCode === 409) return 'An account with this email already exists.';
     if (err.statusCode === 429) return 'Too many attempts. Please wait before trying again.';
+    if (err.statusCode === 400) return err.message || 'Invalid registration data. Please check your input.';
     return 'Service is temporarily unavailable. Please try again later.';
   }
   return err instanceof Error ? err.message : 'Registration failed';
