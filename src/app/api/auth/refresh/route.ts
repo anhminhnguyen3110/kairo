@@ -17,11 +17,19 @@ export async function POST() {
     return NextResponse.json({ message: 'No refresh token' }, { status: 401 });
   }
 
-  const beResponse = await fetch(getBeUrl('/api/v1/auth/refresh'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
+  let beResponse: Response;
+  try {
+    beResponse = await fetch(getBeUrl('/api/v1/auth/refresh'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    return NextResponse.json(
+      { message: 'Service is temporarily unavailable. Please try again later.' },
+      { status: 503 },
+    );
+  }
 
   const json = (await beResponse.json()) as { data: { accessToken: string; refreshToken: string } };
 

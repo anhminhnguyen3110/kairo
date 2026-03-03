@@ -17,11 +17,16 @@ async function refreshTokens(): Promise<string | null> {
 
   if (!refreshToken) return null;
 
-  const response = await fetch(getBeUrl('/api/v1/auth/refresh'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(getBeUrl('/api/v1/auth/refresh'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+  } catch {
+    return null;
+  }
 
   if (!response.ok) {
     cookieStore.delete(COOKIE_ACCESS_TOKEN);
@@ -96,7 +101,15 @@ async function handleRequest(
     accessToken = refreshed;
   }
 
-  let beResponse = await forwardToBe(request, beUrl, accessToken);
+  let beResponse: Response;
+  try {
+    beResponse = await forwardToBe(request, beUrl, accessToken);
+  } catch {
+    return NextResponse.json(
+      { message: 'Service is temporarily unavailable. Please try again later.' },
+      { status: 503 },
+    );
+  }
 
   if (beResponse.status === 401) {
     const newToken = await refreshTokens();
@@ -105,7 +118,14 @@ async function handleRequest(
     }
     accessToken = newToken;
 
-    beResponse = await forwardToBe(request.clone(), beUrl, accessToken);
+    try {
+      beResponse = await forwardToBe(request.clone(), beUrl, accessToken);
+    } catch {
+      return NextResponse.json(
+        { message: 'Service is temporarily unavailable. Please try again later.' },
+        { status: 503 },
+      );
+    }
   }
 
   const isSSE = beResponse.headers.get('content-type')?.includes('text/event-stream') ?? false;

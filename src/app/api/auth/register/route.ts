@@ -12,22 +12,36 @@ import {
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as { email: string; password: string };
 
-  const registerResponse = await fetch(getBeUrl('/api/v1/auth/register'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: body.email, password: body.password }),
-  });
+  let registerResponse: Response;
+  try {
+    registerResponse = await fetch(getBeUrl('/api/v1/auth/register'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: body.email, password: body.password }),
+    });
+  } catch {
+    return NextResponse.json(
+      { message: 'Service is temporarily unavailable. Please try again later.' },
+      { status: 503 },
+    );
+  }
 
   if (!registerResponse.ok) {
     const errorData = await registerResponse.json();
     return NextResponse.json(errorData, { status: registerResponse.status });
   }
 
-  const loginResponse = await fetch(getBeUrl('/api/v1/auth/login'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: body.email, password: body.password }),
-  });
+  let loginResponse: Response;
+  try {
+    loginResponse = await fetch(getBeUrl('/api/v1/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: body.email, password: body.password }),
+    });
+  } catch {
+    // register succeeded but auto-login failed — redirect to login page
+    return NextResponse.json({ redirectTo: '/login' }, { status: 201 });
+  }
 
   const loginData = (await loginResponse.json()) as {
     data: { accessToken: string; refreshToken: string; user: unknown };

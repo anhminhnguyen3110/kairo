@@ -12,11 +12,19 @@ import {
 export async function POST(request: NextRequest) {
   const body = await request.json();
 
-  const beResponse = await fetch(getBeUrl('/api/v1/auth/login'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
+  let beResponse: Response;
+  try {
+    beResponse = await fetch(getBeUrl('/api/v1/auth/login'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+  } catch {
+    return NextResponse.json(
+      { message: 'Service is temporarily unavailable. Please try again later.' },
+      { status: 503 },
+    );
+  }
 
   const json = (await beResponse.json()) as {
     data: { accessToken: string; refreshToken: string; user: unknown };
