@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
   getBeUrl,
+  safeJson,
   COOKIE_ACCESS_TOKEN,
   COOKIE_REFRESH_TOKEN,
   ACCESS_TOKEN_MAX_AGE,
@@ -34,7 +35,13 @@ async function refreshTokens(): Promise<string | null> {
     return null;
   }
 
-  const data = (await response.json()) as { data: { accessToken: string; refreshToken: string } };
+  const data = await safeJson<{ data: { accessToken: string; refreshToken: string } }>(response);
+
+  if (!data?.data) {
+    cookieStore.delete(COOKIE_ACCESS_TOKEN);
+    cookieStore.delete(COOKIE_REFRESH_TOKEN);
+    return null;
+  }
 
   cookieStore.set(COOKIE_ACCESS_TOKEN, data.data.accessToken, {
     ...cookieOptions,

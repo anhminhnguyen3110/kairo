@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
   getBeUrl,
+  safeJson,
   COOKIE_ACCESS_TOKEN,
   COOKIE_REFRESH_TOKEN,
   ACCESS_TOKEN_MAX_AGE,
@@ -26,12 +27,14 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const json = (await beResponse.json()) as {
-    data: { accessToken: string; refreshToken: string; user: unknown };
-  };
+  const json = await safeJson<{ data: { accessToken: string; refreshToken: string; user: unknown } }>(beResponse);
 
   if (!beResponse.ok) {
-    return NextResponse.json(json, { status: beResponse.status });
+    return NextResponse.json(json ?? { message: 'Login failed' }, { status: beResponse.status });
+  }
+
+  if (!json?.data) {
+    return NextResponse.json({ message: 'Unexpected response from server' }, { status: 502 });
   }
 
   const { accessToken, refreshToken, user } = json.data;

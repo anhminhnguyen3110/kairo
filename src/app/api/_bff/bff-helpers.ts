@@ -18,3 +18,14 @@ export const cookieOptions = {
   sameSite: 'lax' as const,
   path: '/',
 };
+
+/** Safely parse JSON from a Response. Returns null if the body is empty or not valid JSON. */
+export async function safeJson<T = unknown>(res: Response): Promise<T | null> {
+  try {
+    const text = await res.text();
+    if (!text) return null;
+    return JSON.parse(text) as T;
+  } catch {
+    return null;
+  }
+}

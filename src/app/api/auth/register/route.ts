@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
   getBeUrl,
+  safeJson,
   COOKIE_ACCESS_TOKEN,
   COOKIE_REFRESH_TOKEN,
   ACCESS_TOKEN_MAX_AGE,
@@ -27,8 +28,11 @@ export async function POST(request: NextRequest) {
   }
 
   if (!registerResponse.ok) {
-    const errorData = await registerResponse.json();
-    return NextResponse.json(errorData, { status: registerResponse.status });
+    const errorData = await safeJson(registerResponse);
+    return NextResponse.json(
+      errorData ?? { message: 'Registration failed' },
+      { status: registerResponse.status },
+    );
   }
 
   let loginResponse: Response;
@@ -43,11 +47,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ redirectTo: '/login' }, { status: 201 });
   }
 
-  const loginData = (await loginResponse.json()) as {
-    data: { accessToken: string; refreshToken: string; user: unknown };
-  };
+  const loginData = await safeJson<{ data: { accessToken: string; refreshToken: string; user: unknown } }>(loginResponse);
 
-  if (!loginResponse.ok) {
+  if (!loginResponse.ok || !loginData?.data) {
     return NextResponse.json({ redirectTo: '/login' }, { status: 201 });
   }
 

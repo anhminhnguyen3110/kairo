@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
   getBeUrl,
+  safeJson,
   COOKIE_ACCESS_TOKEN,
   COOKIE_REFRESH_TOKEN,
   ACCESS_TOKEN_MAX_AGE,
@@ -31,9 +32,9 @@ export async function POST() {
     );
   }
 
-  const json = (await beResponse.json()) as { data: { accessToken: string; refreshToken: string } };
+  const json = await safeJson<{ data: { accessToken: string; refreshToken: string } }>(beResponse);
 
-  if (!beResponse.ok) {
+  if (!beResponse.ok || !json?.data) {
     cookieStore.delete(COOKIE_ACCESS_TOKEN);
     cookieStore.delete(COOKIE_REFRESH_TOKEN);
     return NextResponse.json({ message: 'Session expired' }, { status: 401 });
