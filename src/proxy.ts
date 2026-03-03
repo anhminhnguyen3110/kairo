@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const PUBLIC_PATHS = ['/login', '/register'];
 
-const SKIP_PATTERNS = [/^\/_next\//, /^\/favicon\.ico$/, /^\/api\/auth\//, /^\/api\/proxy\//];
+const SKIP_PATTERNS = [
+  /^\/_next\//,
+  /^\/favicon\.ico$/,
+  /^\/api\/auth\//,
+  /^\/api\/proxy\//,
+  /\.(?:svg|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|eot)$/i,
+];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -30,5 +36,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|ico|webp|woff2?|ttf|eot)).*)',
+  ],
 };
