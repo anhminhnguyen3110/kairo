@@ -16,6 +16,8 @@ import { THREADS_QUERY_KEY } from '@/features/threads/hooks/use-threads';
 
 const ACCEPTED = '.pdf,.txt,.md,.docx,.doc,.csv,.json,.xml,.html,.htm';
 const MAX_SIZE_MB = 25;
+const MAX_TEXTAREA_ROWS = 8;
+const LINE_HEIGHT_PX = 24;
 
 interface MessageInputProps {
   threadId?: number;
@@ -31,7 +33,6 @@ function FileCardSmall({ file, onRemove }: { file: File; onRemove: () => void })
       bg-[#1C1B18] border border-[#3A3632] relative
     "
     >
-      {}
       <button
         type="button"
         onClick={onRemove}
@@ -47,15 +48,12 @@ function FileCardSmall({ file, onRemove }: { file: File; onRemove: () => void })
         <X size={9} />
       </button>
 
-      {}
       <span className="text-[11px] text-stone-300 truncate leading-tight font-medium mt-1">
         {file.name}
       </span>
-      {}
       <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
         {formatBytes(file.size)}
       </span>
-      {}
       <span
         className="self-start px-1.5 py-0.5 rounded text-[9px] font-bold
                        bg-[#2A2724] text-stone-400 border border-[#3A3632] leading-none mt-2"
@@ -98,7 +96,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = 'auto';
-    const maxHeight = 8 * 24;
+    const maxHeight = MAX_TEXTAREA_ROWS * LINE_HEIGHT_PX;
     el.style.height = `${Math.min(el.scrollHeight, maxHeight)}px`;
     setHasText(el.value.trim().length > 0);
   }, []);
@@ -261,7 +259,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
 
   return (
     <div className={wrapperClass}>
-      {}
       <input
         ref={fileInputRef}
         type="file"
@@ -279,7 +276,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
           transition-all duration-150
         "
       >
-        {}
         {pendingFiles.length > 0 && (
           <div className="flex gap-2 px-3 pt-3 flex-wrap">
             {pendingFiles.map((f, i) => (
@@ -288,7 +284,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
           </div>
         )}
 
-        {}
         <textarea
           ref={textareaRef}
           rows={1}
@@ -303,11 +298,8 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
           disabled={isStreaming || isCreating}
         />
 
-        {}
         <div className="flex items-center justify-between px-3 pb-2">
-          {}
           <div className="flex items-center gap-1">
-            {}
             <div ref={plusMenuRef} className="relative">
               <button
                 type="button"
@@ -334,7 +326,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
                     'py-1.5 flex flex-col',
                   )}
                 >
-                  {}
                   <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
@@ -349,7 +340,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
 
                   <div className="h-px bg-[#3A3A3A] mx-2 my-1" />
 
-                  {}
                   <button
                     type="button"
                     onClick={toggleWebSearch}
@@ -381,7 +371,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
               )}
             </div>
 
-            {}
             {webSearchEnabled && (
               <div
                 className="
@@ -400,7 +389,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
             <ModelSelector />
           </div>
 
-          {}
           {isStreaming ? (
             <button
               type="button"

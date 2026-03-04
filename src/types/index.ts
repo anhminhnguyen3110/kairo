@@ -11,6 +11,7 @@ export type TimeFrame = 'today' | 'yesterday' | 'previous7Days' | 'previous30Day
 export interface User {
   id: number;
   email: string;
+  timezone?: string | null;
   createdAt: string;
   updatedAt: string;
 }

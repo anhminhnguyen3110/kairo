@@ -6,6 +6,7 @@ import { useMessages } from '../hooks/use-messages';
 import { useChatStore } from '@/stores/chat-store';
 import { MessageBubble } from './message-bubble';
 import { StreamingBubble } from './streaming-bubble';
+import { ErrorBoundary } from '@/components/error-boundary';
 
 interface MessageListProps {
   threadId: number;
@@ -122,7 +123,9 @@ export function MessageList({ threadId }: MessageListProps) {
           ))}
 
           {}
-          <StreamingBubble />
+          <ErrorBoundary label="Streaming response">
+            <StreamingBubble />
+          </ErrorBoundary>
 
           {}
           <div ref={bottomRef} />

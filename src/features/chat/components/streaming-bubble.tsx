@@ -4,6 +4,7 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { useChatStore } from '@/stores/chat-store';
 import { useArtifactStore } from '@/stores/artifact-store';
 import { ToolEventCard } from './tool-event-card';
+import { ErrorBoundary } from '@/components/error-boundary';
 import { MarkdownRenderer } from './markdown-renderer';
 import { ArtifactChip } from '@/features/artifacts/components/artifact-chip';
 import type { Artifact } from '@/types';
@@ -40,13 +41,14 @@ export function StreamingBubble() {
     <div className="py-6">
       {}
       {streamingToolEvents.map((event) => (
-        <ToolEventCard
-          key={event.id}
-          name={event.name}
-          input={event.input}
-          output={event.output}
-          status={event.status}
-        />
+        <ErrorBoundary key={event.id} label="Tool event">
+          <ToolEventCard
+            name={event.name}
+            input={event.input}
+            output={event.output}
+            status={event.status}
+          />
+        </ErrorBoundary>
       ))}
 
       {}
