@@ -9,6 +9,7 @@ import { MermaidRenderer } from './renderers/mermaid-renderer';
 import { SvgRenderer } from './renderers/svg-renderer';
 import { CodeRenderer } from './renderers/code-renderer';
 import type { Artifact } from '@/types';
+import { useUiStore } from '@/stores/ui-store';
 
 const MIN_WIDTH = 320;
 const MAX_WIDTH = 1400;
@@ -22,6 +23,7 @@ export function ArtifactPanel() {
     streamingArtifactContent,
     streamingArtifactMeta,
   } = useArtifactStore();
+  const { isMobile } = useUiStore();
 
   const [panelWidth, setPanelWidth] = useState(DEFAULT_WIDTH);
   const [lastArtifactId, setLastArtifactId] = useState(activeArtifactId);
@@ -85,10 +87,13 @@ export function ArtifactPanel() {
 
   return (
     <aside
-      style={{ width: panelWidth }}
-      className="relative flex flex-col shrink-0 border-l border-chat-border bg-[#1A1A1A] overflow-hidden"
+      style={isMobile ? undefined : { width: panelWidth }}
+      className={`flex flex-col border-l border-chat-border bg-[#1A1A1A] overflow-hidden ${
+        isMobile ? 'fixed inset-0 z-50' : 'relative shrink-0'
+      }`}
     >
-      {/* Drag handle on the left edge */}
+      {/* Drag handle – desktop only */}
+      {!isMobile && (
       <div
         onMouseDown={onDragMouseDown}
         className="absolute left-0 top-0 bottom-0 w-2 z-10 cursor-col-resize select-none group"
@@ -97,6 +102,7 @@ export function ArtifactPanel() {
         {/* Visual indicator bar */}
         <div className="absolute left-0.5 top-0 bottom-0 w-0.5 bg-[#2A2A2A] group-hover:bg-[#CC785C]/70 group-active:bg-[#CC785C] transition-colors" />
       </div>
+      )}
 
       <ArtifactToolbar
         artifact={artifact}

@@ -425,7 +425,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
       </div>
 
       {variant === 'bottom' && (
-        <p className="text-center text-xs text-stone-400 mt-2">
+        <p className="hidden sm:block text-center text-xs text-stone-400 mt-2">
           Press <kbd className="font-mono">Enter</kbd> to send,{' '}
           <kbd className="font-mono">Shift+Enter</kbd> for newline
         </p>

@@ -12,7 +12,7 @@ import { UserMenu } from './user-menu';
 import { KairoLogo } from '@/components/kairo-logo';
 
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar, openSearch, setIsMobile } = useUiStore();
+  const { sidebarOpen, toggleSidebar, openSearch, setIsMobile, isMobile } = useUiStore();
   const setActiveThread = useChatStore((s) => s.setActiveThread);
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -49,9 +49,20 @@ export function Sidebar() {
   const grouped = groupThreadsByTimeFrame(allThreads);
 
   return (
+    <>
+      {/* Mobile backdrop – dismiss sidebar when tapping outside */}
+      {isMobile && sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50"
+          onClick={toggleSidebar}
+          aria-hidden="true"
+        />
+      )}
     <aside
-      className={`h-screen flex flex-col bg-sidebar-bg shrink-0 transition-all duration-200 ease-in-out ${
-        sidebarOpen ? 'w-[260px]' : 'w-[60px]'
+      className={`h-screen flex flex-col bg-sidebar-bg transition-all duration-200 ease-in-out ${
+        isMobile
+          ? `fixed inset-y-0 left-0 z-50 w-[260px] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+          : `shrink-0 ${sidebarOpen ? 'w-[260px]' : 'w-[60px]'}`
       }`}
     >
       {/* Header */}
@@ -184,6 +195,7 @@ export function Sidebar() {
       {/* User menu */}
       <UserMenu collapsed={!sidebarOpen} />
     </aside>
+    </>
   );
 }
 

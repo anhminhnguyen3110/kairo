@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Paperclip, Pencil, Check, X } from 'lucide-react';
+import { Paperclip, Pencil, Check, X, Menu } from 'lucide-react';
 import { Thread } from '@/types';
 import { useUpdateThread } from '../hooks/use-threads';
 import { useUiStore } from '@/stores/ui-store';
@@ -15,7 +15,7 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
   const [draft, setDraft] = useState(thread.title);
   const inputRef = useRef<HTMLInputElement>(null);
   const { mutate: updateThread } = useUpdateThread();
-  const { toggleFilePanel } = useUiStore();
+  const { toggleFilePanel, toggleSidebar } = useUiStore();
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -52,6 +52,15 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
 
   return (
     <header className="flex items-center gap-3 px-4 py-3 border-b border-chat-border bg-chat-bg">
+      {/* Hamburger – mobile only, opens sidebar */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        className="md:hidden p-1.5 rounded-lg text-stone-400 hover:text-stone-300 hover:bg-[#333333] transition-colors shrink-0"
+        title="Open menu"
+      >
+        <Menu size={18} />
+      </button>
       <div className="flex-1 min-w-0 flex items-center gap-2 group/title">
         {editing ? (
           <>
@@ -105,7 +114,7 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
               className="
                 p-1 rounded text-stone-500 hover:text-stone-300 hover:bg-[#333333]
                 transition-colors shrink-0
-                opacity-0 group-hover/title:opacity-100
+                opacity-100 md:opacity-0 md:group-hover/title:opacity-100
               "
               title="Rename thread"
             >
