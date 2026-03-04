@@ -50,19 +50,18 @@ export function Sidebar() {
 
   return (
     <>
-      {isMobile && sidebarOpen && (
+      {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50"
+          className="md:hidden fixed inset-0 z-40 bg-black/50"
           onClick={toggleSidebar}
           aria-hidden="true"
         />
       )}
     <aside
-      className={`h-screen flex flex-col bg-sidebar-bg transition-all duration-200 ease-in-out ${
-        isMobile
-          ? `fixed inset-y-0 left-0 z-50 w-[260px] ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
-          : `shrink-0 ${sidebarOpen ? 'w-[260px]' : 'w-[60px]'}`
-      }`}
+      className={`h-screen flex flex-col bg-sidebar-bg transition-all duration-200 ease-in-out
+        max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-[260px]
+        ${sidebarOpen ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'}
+        md:shrink-0 ${sidebarOpen ? 'md:w-[260px]' : 'md:w-[60px]'}`}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-2 pt-3 pb-3">

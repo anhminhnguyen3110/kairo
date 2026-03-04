@@ -49,7 +49,7 @@ export function NewChatContainer() {
 
   return (
     <div className="flex flex-col h-full bg-chat-bg relative">
-      <div className="md:hidden flex items-center px-3 py-2 border-b border-chat-border shrink-0">
+      <div className="md:hidden flex items-center gap-3 px-3 py-2 border-b border-chat-border shrink-0">
         <button
           type="button"
           onClick={toggleSidebar}
@@ -58,6 +58,10 @@ export function NewChatContainer() {
         >
           <Menu size={20} />
         </button>
+        <div className="flex items-center gap-2">
+          <KairoLogo size={24} />
+          <span className="text-[15px] font-semibold text-[#ECECEC] tracking-tight">Kairo</span>
+        </div>
       </div>
       {hasActivity ? (
         <>
