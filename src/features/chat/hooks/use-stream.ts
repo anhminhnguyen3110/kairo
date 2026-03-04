@@ -235,12 +235,12 @@ export function useStream() {
 
               // Refetch messages then swap StreamingBubble → real MessageBubbles
               if (finalThreadId) {
-                void qc.invalidateQueries({ queryKey: getMessagesQueryKey(finalThreadId) }).then(
-                  () => {
+                void qc
+                  .invalidateQueries({ queryKey: getMessagesQueryKey(finalThreadId) })
+                  .then(() => {
                     finalizeStream();
                     if (threadId) clearOptimisticMessages();
-                  },
-                );
+                  });
               } else {
                 finalizeStream();
                 if (threadId) clearOptimisticMessages();
@@ -295,7 +295,9 @@ export function useStream() {
                     ...data,
                     pages: data.pages.map((page) => ({
                       ...page,
-                      data: page.data.map((t) => (t.id === tid ? { ...t, title: updatedTitle } : t)),
+                      data: page.data.map((t) =>
+                        t.id === tid ? { ...t, title: updatedTitle } : t,
+                      ),
                     })),
                   };
                 });

@@ -34,7 +34,9 @@ export function LoginForm() {
     resolver: zodResolver(loginSchema),
   });
 
-  const clearError = () => { if (error) setError(null); };
+  const clearError = () => {
+    if (error) setError(null);
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
@@ -60,8 +62,22 @@ export function LoginForm() {
               </linearGradient>
             </defs>
             <rect x="20" y="20" width="80" height="80" rx="17" fill="url(#gradK)" />
-            <path d="M 43 42 L 43 78 M 43 60 L 65 42 L 65 48 M 43 60 L 65 78 L 65 72" stroke="white" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            <path d="M 68 54 L 75 60 L 68 66" stroke="white" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            <path
+              d="M 43 42 L 43 78 M 43 60 L 65 42 L 65 48 M 43 60 L 65 78 L 65 72"
+              stroke="white"
+              strokeWidth="6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
+            <path
+              d="M 68 54 L 75 60 L 68 66"
+              stroke="white"
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              fill="none"
+            />
           </svg>
         </div>
         <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
@@ -71,7 +87,10 @@ export function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
         {}
         {error && (
-          <div role="alert" className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700">
+          <div
+            role="alert"
+            className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-sm text-red-700"
+          >
             {error}
           </div>
         )}
@@ -100,7 +119,11 @@ export function LoginForm() {
             placeholder="you@example.com"
             disabled={isSubmitting}
           />
-          {errors.email && <p id="login-email-error" className="mt-1.5 text-xs text-red-600">{errors.email.message}</p>}
+          {errors.email && (
+            <p id="login-email-error" className="mt-1.5 text-xs text-red-600">
+              {errors.email.message}
+            </p>
+          )}
         </div>
 
         {}
@@ -138,7 +161,9 @@ export function LoginForm() {
             </button>
           </div>
           {errors.password && (
-            <p id="login-password-error" className="mt-1.5 text-xs text-red-600">{errors.password.message}</p>
+            <p id="login-password-error" className="mt-1.5 text-xs text-red-600">
+              {errors.password.message}
+            </p>
           )}
         </div>
 

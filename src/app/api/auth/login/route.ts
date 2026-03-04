@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const json = await safeJson<{ data: { accessToken: string; refreshToken: string; user: unknown } }>(beResponse);
+  const json = await safeJson<{
+    data: { accessToken: string; refreshToken: string; user: unknown };
+  }>(beResponse);
 
   if (!beResponse.ok) {
     return NextResponse.json(json ?? { message: 'Login failed' }, { status: beResponse.status });

@@ -150,7 +150,10 @@ describe('useChatStore', () => {
   describe('setSavingStatus()', () => {
     it('transitions status to saving', () => {
       const ac = new AbortController();
-      useChatStore.setState({ streamingStatus: 'streaming', abortController: ac as unknown as null });
+      useChatStore.setState({
+        streamingStatus: 'streaming',
+        abortController: ac as unknown as null,
+      });
       useChatStore.getState().setSavingStatus();
       expect(useChatStore.getState().streamingStatus).toBe('saving');
     });

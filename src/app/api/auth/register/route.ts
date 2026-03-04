@@ -29,10 +29,9 @@ export async function POST(request: NextRequest) {
 
   if (!registerResponse.ok) {
     const errorData = await safeJson(registerResponse);
-    return NextResponse.json(
-      errorData ?? { message: 'Registration failed' },
-      { status: registerResponse.status },
-    );
+    return NextResponse.json(errorData ?? { message: 'Registration failed' }, {
+      status: registerResponse.status,
+    });
   }
 
   let loginResponse: Response;
@@ -47,7 +46,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ redirectTo: '/login' }, { status: 201 });
   }
 
-  const loginData = await safeJson<{ data: { accessToken: string; refreshToken: string; user: unknown } }>(loginResponse);
+  const loginData = await safeJson<{
+    data: { accessToken: string; refreshToken: string; user: unknown };
+  }>(loginResponse);
 
   if (!loginResponse.ok || !loginData?.data) {
     return NextResponse.json({ redirectTo: '/login' }, { status: 201 });
