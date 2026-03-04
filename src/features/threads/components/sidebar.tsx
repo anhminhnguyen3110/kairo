@@ -50,7 +50,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile backdrop – dismiss sidebar when tapping outside */}
       {isMobile && sidebarOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/50"

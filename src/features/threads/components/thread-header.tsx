@@ -52,7 +52,6 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
 
   return (
     <header className="flex items-center gap-3 px-4 py-3 border-b border-chat-border bg-chat-bg">
-      {/* Hamburger – mobile only, opens sidebar */}
       <button
         type="button"
         onClick={toggleSidebar}

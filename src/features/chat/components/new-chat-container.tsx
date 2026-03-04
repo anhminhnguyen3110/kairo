@@ -49,7 +49,6 @@ export function NewChatContainer() {
 
   return (
     <div className="flex flex-col h-full bg-chat-bg relative">
-      {/* Mobile top bar with hamburger */}
       <div className="md:hidden flex items-center px-3 py-2 border-b border-chat-border shrink-0">
         <button
           type="button"

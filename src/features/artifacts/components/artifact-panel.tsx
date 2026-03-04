@@ -92,7 +92,6 @@ export function ArtifactPanel() {
         isMobile ? 'fixed inset-0 z-50' : 'relative shrink-0'
       }`}
     >
-      {/* Drag handle – desktop only */}
       {!isMobile && (
       <div
         onMouseDown={onDragMouseDown}
