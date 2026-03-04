@@ -3,7 +3,7 @@
 Next.js 16 chat interface for the Kairo AI agent platform. Real-time SSE token streaming, side-by-side artifact panel, tool call cards, file uploads, thread management, model selector with 183+ models, and persistent agent memory.
 
 **Stack:** Next.js 16  React 19  TanStack Query 5  Zustand 5  Tailwind CSS 4  
-**Tests:** 123 passing across 12 spec files (Vitest + Testing Library)
+**Tests:** 129 passing across 12 spec files (Vitest + Testing Library)
 
 ---
 
@@ -172,49 +172,71 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ## Screenshots
 
-### Authentication
+### Authentication — Login & Register
 
-![Login page](docs/screenshots/r1-01-login-page.png)
+![Login page with form elements](docs/screenshots/r1-tc1-login-page-elements.png)
 
-![Register filled](docs/screenshots/r1-03-register-filled.png)
+![Wrong credentials error](docs/screenshots/r1-tc9-wrong-credentials-error.png)
 
-![Logged in](docs/screenshots/r1-06-logged-in.png)
+![After successful login — threads home](docs/screenshots/r1-tc8-login-success-threads.png)
 
 ![Authentication demo](docs/round-1.gif)
 
 ---
 
-### Streaming Chat — First Message
+![Register page with form elements](docs/screenshots/r2-tc1-register-page-elements.png)
 
-![Home empty state](docs/screenshots/r2-01-home-empty.png)
+![Duplicate email error](docs/screenshots/r2-tc9-duplicate-email.png)
 
-![Message typed](docs/screenshots/r2-02-message-typed.png)
+![After successful registration — threads home](docs/screenshots/r2-tc8-register-success-threads.png)
 
-![AI responding](docs/screenshots/r2-04-ai-response.png)
+---
+
+### Streaming Chat — Token-by-Token
+
+![Message sent — streaming tokens](docs/screenshots/r7-tc1-tc2-message-sent-streaming.png)
+
+![Response complete — title auto-generated](docs/screenshots/r7-tc3-tc8-response-complete-title-updated.png)
+
+![Multi-turn conversation](docs/screenshots/r7-tc10-multi-turn-conversation.png)
 
 ![Streaming chat demo](docs/round-2.gif)
 
 ---
 
-### Tool Cards — Web Search + Think
+### Tool Cards — Web Search & Think
 
-![Web search tool card](docs/screenshots/r3-03-web-search-tool-card.png)
+![Tools panel with web search toggle](docs/screenshots/r8-tc2-tools-panel.png)
 
-![Web search result](docs/screenshots/r3-04-web-search-result.png)
+![Web search enabled](docs/screenshots/r8-tc2-web-search-enabled.png)
 
-![Tool cards collapsed](docs/screenshots/r3-08-tool-cards-collapsed.png)
+![Web search executing — streaming](docs/screenshots/r8-tc3-web-search-streaming.png)
+
+![Web search results card](docs/screenshots/r8-tc3-tool-call-web-search-results.png)
+
+![Complete response with citations](docs/screenshots/r8-tc3-web-search-complete-response.png)
+
+![Tool cards collapsed — compact view](docs/screenshots/r8-tc6-tool-card-collapsed.png)
+
+![search_files tool card](docs/screenshots/r8-search-files-tool.png)
 
 ![Tool cards demo](docs/round-3.gif)
 
 ---
 
-### Artifacts — Live HTML Preview
+### Artifacts — Live HTML Preview & Code
 
-![Creating artifact](docs/screenshots/r4-02-think-and-creating-artifact.png)
+![Agent creating artifact](docs/screenshots/r9-tc1-artifact-creating.png)
 
-![Artifact code + preview panel](docs/screenshots/r4-03-artifact-response.png)
+![Artifact panel — preview tab](docs/screenshots/r9-tc1-tc2-artifact-panel-preview.png)
 
-![Artifact preview tab](docs/screenshots/r4-04-artifact-preview-panel.png)
+![Interactive artifact — counter example](docs/screenshots/r9-tc3-interactive-preview-counter.png)
+
+![Artifact source code tab](docs/screenshots/r9-tc4-artifact-source-code.png)
+
+![Python code artifact](docs/screenshots/r9-tc8-python-code-artifact.png)
+
+![Multiple artifacts](docs/screenshots/r9-tc10-multiple-artifacts.png)
 
 ![Artifacts demo](docs/round-4.gif)
 
@@ -222,97 +244,116 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ### File Upload & Document Understanding
 
-![Attach dropdown](docs/screenshots/r5-02-attach-dropdown.png)
+![Attach files dropdown](docs/screenshots/r10-tc1-attach-files-dropdown.png)
 
-![File chip attached](docs/screenshots/r5-03-file-attached-chip.png)
+![File chip attached in input bar](docs/screenshots/r10-tc2-tc3-file-attached-chip.png)
 
-![extract_document tool card](docs/screenshots/r5-05-extract-doc-tool.png)
+![Upload result — extract_document tool card](docs/screenshots/r10-tc4-file-upload-result.png)
+
+![Files panel in thread header](docs/screenshots/r10-tc10-header-attach-files-panel.png)
 
 ![File upload demo](docs/round-5.gif)
 
 ---
 
-### Thread Management
+### Thread Management — Rename, Clone, Delete
 
-![Thread context menu](docs/screenshots/r6-03-thread-context-menu.png)
+![Thread hover menu](docs/screenshots/r5-tc1-thread-hover-menu.png)
 
-![Thread rename input](docs/screenshots/r6-04-thread-rename-input.png)
+![Thread context menu](docs/screenshots/r5-tc2-thread-context-menu.png)
 
-![Cloned thread](docs/screenshots/r6-08-thread-cloned.png)
+![Rename inline input](docs/screenshots/r5-tc3-rename-input.png)
+
+![Rename confirmed](docs/screenshots/r5-tc4-rename-success.png)
+
+![Clone thread](docs/screenshots/r5-tc6-clone-thread.png)
+
+![Delete thread](docs/screenshots/r5-tc7-delete-thread.png)
 
 ![Thread management demo](docs/round-6.gif)
 
 ---
 
+### Thread Search — Ctrl+K
+
+![Search modal open](docs/screenshots/r6-tc1-search-modal-open.png)
+
+![Search results highlighted](docs/screenshots/r6-tc5-search-results.png)
+
+![No results state](docs/screenshots/r6-tc6-no-results.png)
+
+![API-backed search results](docs/screenshots/r6-tc9-api-search-results.png)
+
+---
+
 ### AI Memory — Per-User Persistent
 
-![Writing memory](docs/screenshots/r7-04-memory-written.png)
+![Writing memory with write_file](docs/screenshots/r7-04-memory-written.png)
 
-![Memory confirmed](docs/screenshots/r7-05-memory-scroll-bottom.png)
+![Memory confirmed in workspace](docs/screenshots/r7-05-memory-scroll-bottom.png)
 
-![Memory recalled](docs/screenshots/r7-08-memory-recalled.png)
+![Memory recalled in new thread](docs/screenshots/r7-08-memory-recalled.png)
 
 ![AI memory demo](docs/round-7.gif)
 
 ---
 
-### Scroll UX — Jump-to-Bottom FAB
+### Session & Protected Routes
 
-![Thread bottom](docs/screenshots/r8-01-thread-bottom.png)
+![Unauthenticated redirect to login](docs/screenshots/r3-tc1-protected-redirect.png)
 
-![Scrolled up](docs/screenshots/r8-02-scrolled-up.png)
+![User avatar — first letter of email](docs/screenshots/r3-tc8-user-avatar.png)
 
-![FAB visible](docs/screenshots/r8-03-scroll-to-bottom-fab.png)
+![Session persistence across page refresh](docs/screenshots/r3-tc5-tc6-tc7-tc8-tc9-tc10-session.png)
 
-![Scrolled to bottom](docs/screenshots/r8-04-scrolled-to-bottom.png)
-
-![Scroll UX demo](docs/round-8.gif)
-
----
-
-### Model Selector — 183+ Models
-
-![Current model](docs/screenshots/r9-01-current-model.png)
-
-![Model dropdown](docs/screenshots/r9-05-models-list.png)
-
-![Search for llama](docs/screenshots/r9-06-model-search-llama.png)
-
-![Model changed](docs/screenshots/r9-07-model-changed.png)
-
-![Model selector demo](docs/round-9.gif)
-
----
-
-### Sign-out & Session Persistence
-
-![Logged in state](docs/screenshots/r10-01-logged-in-state.png)
-
-![Signed out login](docs/screenshots/r10-02-signed-out-login.png)
-
-![Login filled](docs/screenshots/r10-03-login-filled.png)
-
-![Logged in again](docs/screenshots/r10-04-logged-in-again.png)
+![Cookie-based token refresh](docs/screenshots/r16-tc10-refresh-cookie-based.png)
 
 ![Session persistence demo](docs/round-10.gif)
 
 ---
 
-### Responsive Design — Mobile (375 px)
+### Model Selector — 183+ Models
 
-At ≤ 767 px the sidebar collapses to a 60 px icon-only strip so the chat area fills the screen. Tapping the Kairo logo slides the full sidebar open as an overlay, then closes again automatically after selecting a thread.
+![Model selector dropdown](docs/screenshots/r11-tc1-model-selector-dropdown.png)
 
-**Home — sidebar collapsed (icon-only)**
-![Mobile home — sidebar collapsed](docs/screenshots/mobile-01-home.png)
+![Model list expanded by provider](docs/screenshots/r11-tc2-model-list-expanded.png)
 
-**Sidebar open as overlay**
-![Mobile sidebar open overlay](docs/screenshots/mobile-02-sidebar-open.png)
+![Search model — DeepSeek](docs/screenshots/r11-tc3-model-search-deepseek.png)
 
-**Chat thread — full-width message area**
-![Mobile chat thread](docs/screenshots/mobile-03-chat-thread.png)
+![Model changed — DeepSeek selected](docs/screenshots/r11-tc4-model-changed-deepseek.png)
 
-**Login page**
-![Mobile login page](docs/screenshots/mobile-04-login.png)
+![Model selector demo](docs/round-9.gif)
+
+---
+
+### Scroll UX — Jump-to-Bottom FAB
+
+![Thread at bottom](docs/screenshots/r8-01-thread-bottom.png)
+
+![Scrolled up — FAB appears](docs/screenshots/r8-03-scroll-to-bottom-fab.png)
+
+![Back to bottom](docs/screenshots/r8-04-scrolled-to-bottom.png)
+
+![Scroll UX + abort demo](docs/round-8.gif)
+
+---
+
+### Responsive Design
+
+**Desktop — sidebar collapsed (icon-only strip)**
+![Sidebar collapsed — icon strip](docs/screenshots/r12-tc1-sidebar-collapsed.png)
+
+**Desktop — sidebar expanded**
+![Sidebar expanded](docs/screenshots/r12-tc3-sidebar-expanded.png)
+
+**Mobile 375 px — full-width chat area**
+![Mobile 375px viewport](docs/screenshots/r12-tc6-mobile-375px-viewport.png)
+
+**Mobile — active thread**
+![Mobile thread view](docs/screenshots/r12-tc7-thread-mobile-view.png)
+
+**Tablet 768 px**
+![Tablet 768px viewport](docs/screenshots/r12-tc8-tablet-768px-viewport.png)
 
 ## Quick Start — Local
 
@@ -488,7 +529,7 @@ pnpm test:ui         # Vitest browser UI
 | `thread-list.spec.tsx` | Time-group sorting (Today/Yesterday/Older) |
 | `model-store.spec.ts` | Model selection, provider change, localStorage persistence |
 | `chat-input.spec.tsx` | Submit on Enter, Shift+Enter newline, file chip remove |
-| **Total** | **123 tests across 12 files** |
+| **Total** | **129 tests across 12 files** |
 
 ---
 
@@ -539,7 +580,7 @@ fe/
        api-client.ts             # Typed fetch, envelope unwrap, SSE stream
     types/                        # thread.ts, message.ts, artifact.ts
  docs/
-    screenshots/                  # 63 PNG screenshots (one per demo step)
+    screenshots/                  # 100+ PNG screenshots (per test-case)
     round-1.gif  round-10.gif   # Animated GIF per feature
  public/
  Dockerfile
