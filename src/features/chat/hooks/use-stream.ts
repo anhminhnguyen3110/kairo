@@ -445,6 +445,9 @@ export function useStream() {
           }
         }
         setStreamError(errorMessage);
+        // Clean up optimistic messages so they don't ghost on retry
+        finalizeStream();
+        clearOptimisticMessages();
       } else {
         // Refetch messages from DB so the saved user message reappears after abort
         if (threadId) {
