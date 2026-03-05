@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Paperclip, Pencil, Check, X, Menu } from 'lucide-react';
+import { Paperclip, Pencil, Check, X, Menu, Plus } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Thread } from '@/types';
 import { useUpdateThread } from '../hooks/use-threads';
 import { useUiStore } from '@/stores/ui-store';
+import { useChatStore } from '@/stores/chat-store';
 
 interface ThreadHeaderProps {
   thread: Thread;
@@ -16,6 +18,13 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { mutate: updateThread } = useUpdateThread();
   const { toggleFilePanel, toggleSidebar } = useUiStore();
+  const setActiveThread = useChatStore((s) => s.setActiveThread);
+  const router = useRouter();
+
+  const handleNewChat = useCallback(() => {
+    setActiveThread(null);
+    router.push('/threads');
+  }, [router, setActiveThread]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -100,28 +109,43 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
             </button>
           </>
         ) : (
-          <>
-            <span
-              key={thread.title}
-              className="flex-1 min-w-0 truncate text-sm font-medium text-[#ECECEC] animate-title-in"
-            >
+          <button
+            key={thread.title}
+            type="button"
+            onClick={startEdit}
+            title="Rename thread"
+            className="
+              flex-1 min-w-0 flex items-center gap-1.5 group/rename
+              text-left cursor-pointer
+            "
+          >
+            <span className="min-w-0 truncate text-sm font-medium text-[#ECECEC] animate-title-in">
               {thread.title}
             </span>
-            <button
-              type="button"
-              onClick={startEdit}
+            <Pencil
+              size={12}
               className="
-                p-1 rounded text-stone-500 hover:text-stone-300 hover:bg-[#333333]
-                transition-colors shrink-0
-                opacity-100 md:opacity-0 md:group-hover/title:opacity-100
+                shrink-0 text-stone-500 group-hover/rename:text-stone-300
+                opacity-0 group-hover/rename:opacity-100
+                transition-all
               "
-              title="Rename thread"
-            >
-              <Pencil size={13} />
-            </button>
-          </>
+            />
+          </button>
         )}
       </div>
+
+      {}
+      <button
+        type="button"
+        onClick={handleNewChat}
+        className="
+          p-1.5 rounded-lg text-[#CC785C] hover:text-[#e0885c]
+          hover:bg-[#333333] transition-colors
+        "
+        title="New chat"
+      >
+        <Plus size={16} />
+      </button>
 
       {}
       <button

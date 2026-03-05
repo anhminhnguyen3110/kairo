@@ -79,13 +79,7 @@ export function StreamingBubble() {
         </div>
       )}
 
-      {}
-      {streamingStatus === 'saving' && (
-        <div className="flex items-center gap-1.5 mt-3 text-[11px] text-neutral-500">
-          <Loader2 size={10} className="animate-spin" />
-          <span>Saving…</span>
-        </div>
-      )}
+
     </div>
   );
 }

@@ -1,13 +1,13 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { createSseStream, ApiClientError } from '@/lib/api-client';
 import { useChatStore } from '@/stores/chat-store';
 import { useModelStore } from '@/stores/model-store';
 import { useUiStore } from '@/stores/ui-store';
 import { useArtifactStore } from '@/stores/artifact-store';
-import type { SSEEvent, Message, Thread } from '@/types';
+import type { SSEEvent, Message, Thread, PaginatedResponse } from '@/types';
 import { getMessagesQueryKey } from './use-messages';
 import { THREADS_QUERY_KEY } from '@/features/threads/hooks/use-threads';
 import { filesApi } from '@/features/files/api/files-api';
@@ -229,26 +229,93 @@ export function useStream() {
                   router.push(`/threads/${finalThreadId}`);
                 }
                 setTimeout(() => {
-                  void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
+                  void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY, refetchType: 'none' });
                 }, 100);
               }
 
-              // Refetch messages then swap StreamingBubble → real MessageBubbles
+              // Inject AI response into cache immediately so StreamingBubble can disappear
+              // without a flash — the real MessageBubble is already in the cache.
               if (finalThreadId) {
-                void qc
-                  .invalidateQueries({ queryKey: getMessagesQueryKey(finalThreadId) })
-                  .then(() => {
-                    finalizeStream();
-                    if (threadId) clearOptimisticMessages();
-                  });
-              } else {
-                finalizeStream();
-                if (threadId) clearOptimisticMessages();
+                const currentContent = useChatStore.getState().streamingContent;
+                const currentOptimistic = useChatStore.getState().optimisticMessages;
+                const currentToolEvents = useChatStore.getState().streamingToolEvents;
+
+                // Map streaming tool events → ToolCall[] (exclude think blocks)
+                const toolCallsForCache = currentToolEvents
+                  .filter((e) => e.name !== 'think')
+                  .map((e) => ({ id: e.id, name: e.name, input: e.input, output: e.output }));
+
+                // Build artifacts from stop event (IDs must be strings to match artifact store)
+                const artifactsForCache =
+                  stop.artifacts?.map((a) => ({
+                    id: String(a.id),
+                    type: a.type,
+                    title: a.title,
+                    content: a.content,
+                    language: a.language ?? undefined,
+                  })) ?? [];
+
+                qc.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+                  getMessagesQueryKey(finalThreadId),
+                  (old) => {
+                    if (!old?.pages?.length) return old;
+                    const [firstPage, ...rest] = old.pages;
+
+                    // Build the list of messages to prepend (newest-first, matching page order)
+                    const toInject: Message[] = [];
+
+                    // Inject AI message with tool calls + artifacts so they survive the
+                    // StreamingBubble → MessageBubble transition without disappearing.
+                    if (currentContent) {
+                      toInject.push({
+                        id: stop.message_id ?? -(Date.now()),
+                        threadId: finalThreadId,
+                        role: 'ASSISTANT',
+                        content: currentContent,
+                        toolCalls: toolCallsForCache.length > 0 ? toolCallsForCache : null,
+                        artifacts: artifactsForCache.length > 0 ? artifactsForCache as Message['artifacts'] : undefined,
+                        metadata: null,
+                        orderIndex: Number.MAX_SAFE_INTEGER,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                      });
+                    }
+
+                    // Inject optimistic user messages so they stay visible
+                    // (deduplicatedOptimistic will hide them from optimistic layer)
+                    for (const opt of [...currentOptimistic].reverse()) {
+                      toInject.push({
+                        ...opt,
+                        orderIndex: Number.MAX_SAFE_INTEGER - 1,
+                      });
+                    }
+
+                    return {
+                      ...old,
+                      pages: [
+                        { ...firstPage, data: [...toInject, ...firstPage.data] },
+                        ...rest,
+                      ],
+                    };
+                  },
+                );
               }
 
-              // Refresh sidebar (lastMessage preview, messageCount)
-              if (threadId) {
-                void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
+              // Immediately unlock UI — user can send next message right away
+              finalizeStream();
+              if (threadId) clearOptimisticMessages();
+
+              // Mark caches as stale — will silently refetch on next focus/navigation,
+              // not immediately. This avoids the burst of API calls right after stream.
+              if (finalThreadId) {
+                void qc.invalidateQueries({
+                  queryKey: getMessagesQueryKey(finalThreadId),
+                  refetchType: 'none',
+                });
+                void qc.invalidateQueries({
+                  queryKey: THREADS_QUERY_KEY,
+                  refetchType: 'none',
+                });
               }
 
               if (stop.artifacts && stop.artifacts.length > 0) {
@@ -262,10 +329,6 @@ export function useStream() {
                 }));
                 setArtifacts(realArtifacts);
                 openArtifact(realArtifacts[realArtifacts.length - 1].id);
-
-                if (finalThreadId) {
-                  void qc.invalidateQueries({ queryKey: ['artifacts', finalThreadId] });
-                }
               }
 
               break;
