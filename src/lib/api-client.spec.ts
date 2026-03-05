@@ -112,6 +112,32 @@ describe('apiClient', () => {
         message: 'Request failed: 503',
       });
     });
+
+    it('redirects to /login?next=<path> on 401 proxy calls and still throws', async () => {
+      globalThis.fetch = makeFetchMock(401, { message: 'Session expired' });
+      const originalLocation = window.location;
+      // Replace window.location with a writable mock
+      Object.defineProperty(window, 'location', {
+        writable: true,
+        value: { href: 'http://localhost/', pathname: '/threads', search: '' },
+      });
+      await expect(apiClient.get('/threads')).rejects.toMatchObject({
+        statusCode: 401,
+        message: 'Session expired',
+      });
+      expect(window.location.href).toBe('/login?next=%2Fthreads');
+      // Restore
+      Object.defineProperty(window, 'location', { writable: true, value: originalLocation });
+    });
+
+    it('does NOT redirect on 401 for auth (bypassProxy) calls', async () => {
+      globalThis.fetch = makeFetchMock(401, { message: 'Unauthorized' });
+      const originalHref = window.location.href;
+      await expect(apiClient.auth.post('/api/auth/login', {})).rejects.toMatchObject({
+        statusCode: 401,
+      });
+      expect(window.location.href).toBe(originalHref);
+    });
   });
 
   describe('POST', () => {

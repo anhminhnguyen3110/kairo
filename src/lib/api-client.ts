@@ -41,6 +41,16 @@ async function fetchBff<T>(path: string, options: FetchOptions = {}): Promise<T>
       const errorBody = (await response.json()) as ApiError;
       errorMessage = errorBody.message ?? errorMessage;
     } catch {}
+
+    // When the session has fully expired (proxy returns 401 after failed refresh),
+    // redirect to login preserving the current path so the user can return after login.
+    // Only applies to proxy calls (bypassProxy=false) to avoid interfering with
+    // login/register/refresh endpoints that legitimately return 401.
+    if (response.status === 401 && isBrowser && !bypassProxy) {
+      const next = encodeURIComponent(window.location.pathname + window.location.search);
+      window.location.href = `/login?next=${next}`;
+    }
+
     throw new ApiClientError(response.status, errorMessage);
   }
 
