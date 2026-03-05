@@ -93,14 +93,14 @@ export function ArtifactPanel() {
       }`}
     >
       {!isMobile && (
-      <div
-        onMouseDown={onDragMouseDown}
-        className="absolute left-0 top-0 bottom-0 w-2 z-10 cursor-col-resize select-none group"
-        title="Drag to resize"
-      >
-        {/* Visual indicator bar */}
-        <div className="absolute left-0.5 top-0 bottom-0 w-0.5 bg-[#2A2A2A] group-hover:bg-[#CC785C]/70 group-active:bg-[#CC785C] transition-colors" />
-      </div>
+        <div
+          onMouseDown={onDragMouseDown}
+          className="absolute left-0 top-0 bottom-0 w-2 z-10 cursor-col-resize select-none group"
+          title="Drag to resize"
+        >
+          {/* Visual indicator bar */}
+          <div className="absolute left-0.5 top-0 bottom-0 w-0.5 bg-[#2A2A2A] group-hover:bg-[#CC785C]/70 group-active:bg-[#CC785C] transition-colors" />
+        </div>
       )}
 
       <ArtifactToolbar

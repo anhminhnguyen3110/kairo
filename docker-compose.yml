@@ -1,0 +1,39 @@
+# docker-compose.yml  (fe/)
+# ------------------------------------------------------------
+# Standalone frontend stack.
+# Expects backend (app) already running on ii-network.
+#
+# Usage (from fe/):
+#   docker compose up -d --build   # build and start
+#   docker compose logs -f fe      # follow logs
+#   docker compose down            # stop
+# ------------------------------------------------------------
+
+services:
+  # -- Next.js frontend ----------------------------------------
+  fe:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      # Calls backend via Docker internal network
+      API_INTERNAL_URL: http://app:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost
+      PORT: "3000"
+    ports:
+      - "${FE_PORT:-3000}:3000"
+    networks:
+      - ii-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO /dev/null http://127.0.0.1:3000/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+# -- Shared network (must already exist, created by be/ or root compose) ------
+networks:
+  ii-network:
+    external: true

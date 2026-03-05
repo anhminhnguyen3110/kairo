@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { useChatStore } from '@/stores/chat-store';
 import { useArtifactStore } from '@/stores/artifact-store';
 import { ToolEventCard } from './tool-event-card';
@@ -78,8 +78,6 @@ export function StreamingBubble() {
           ))}
         </div>
       )}
-
-
     </div>
   );
 }

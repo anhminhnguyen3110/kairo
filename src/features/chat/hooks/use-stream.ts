@@ -268,12 +268,15 @@ export function useStream() {
                     // StreamingBubble → MessageBubble transition without disappearing.
                     if (currentContent) {
                       toInject.push({
-                        id: stop.message_id ?? -(Date.now()),
+                        id: stop.message_id ?? -Date.now(),
                         threadId: finalThreadId,
                         role: 'ASSISTANT',
                         content: currentContent,
                         toolCalls: toolCallsForCache.length > 0 ? toolCallsForCache : null,
-                        artifacts: artifactsForCache.length > 0 ? artifactsForCache as Message['artifacts'] : undefined,
+                        artifacts:
+                          artifactsForCache.length > 0
+                            ? (artifactsForCache as Message['artifacts'])
+                            : undefined,
                         metadata: null,
                         orderIndex: Number.MAX_SAFE_INTEGER,
                         createdAt: new Date().toISOString(),
@@ -292,10 +295,7 @@ export function useStream() {
 
                     return {
                       ...old,
-                      pages: [
-                        { ...firstPage, data: [...toInject, ...firstPage.data] },
-                        ...rest,
-                      ],
+                      pages: [{ ...firstPage, data: [...toInject, ...firstPage.data] }, ...rest],
                     };
                   },
                 );
