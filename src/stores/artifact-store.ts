@@ -66,6 +66,7 @@ export const useArtifactStore = create<ArtifactState>()(
       set((state) => {
         state.streamingArtifactMeta = meta as unknown as typeof state.streamingArtifactMeta;
         state.streamingArtifactContent = '';
+        state.panelOpen = true;
       }),
 
     appendArtifactContent: (chunk) =>
@@ -79,6 +80,7 @@ export const useArtifactStore = create<ArtifactState>()(
         state.activeArtifactId = artifact.id;
         state.streamingArtifactMeta = null;
         state.streamingArtifactContent = '';
+        state.panelOpen = true;
       }),
   })),
 );
