@@ -1,19 +1,9 @@
-/**
- * Unit tests for use-stream.ts
- *
- * BUG-1 fix: When message_stop fires and the real user message is already
- * present in the React Query cache (because useMessages fetched it first),
- * the optimistic user message must NOT be injected again — otherwise the
- * message appears twice in the conversation view.
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { InfiniteData } from '@tanstack/react-query';
 import type { Message, PaginatedResponse } from '@/types';
-
-// ── module mocks ─────────────────────────────────────────────────────────────
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }));
 
@@ -54,9 +44,7 @@ const storeState = {
 
 vi.mock('@/stores/chat-store', () => ({
   useChatStore: Object.assign(
-    vi.fn((sel?: (s: typeof storeState) => unknown) =>
-      sel ? sel(storeState) : storeState,
-    ),
+    vi.fn((sel?: (s: typeof storeState) => unknown) => (sel ? sel(storeState) : storeState)),
     { getState: () => storeState },
   ),
 }));
@@ -89,25 +77,14 @@ vi.mock('./use-messages', () => ({
   getMessagesQueryKey: (id: number) => ['threads', id, 'messages'] as const,
 }));
 
-// ── helpers ───────────────────────────────────────────────────────────────────
-
 import { useStream } from './use-stream';
 
-/**
- * Build a fake ReadableStreamDefaultReader<string> that yields one SSE line
- * per read() call, followed by `data: [DONE]`.
- */
 function makeReader(events: object[]): ReadableStreamDefaultReader<string> {
-  const lines = [
-    ...events.map((e) => `data: ${JSON.stringify(e)}\n`),
-    'data: [DONE]\n',
-  ];
+  const lines = [...events.map((e) => `data: ${JSON.stringify(e)}\n`), 'data: [DONE]\n'];
   let i = 0;
   return {
     read: vi.fn(async () =>
-      i < lines.length
-        ? { done: false, value: lines[i++] }
-        : { done: true, value: '' },
+      i < lines.length ? { done: false, value: lines[i++] } : { done: true, value: '' },
     ),
     cancel: vi.fn(),
     closed: Promise.resolve(undefined),
@@ -145,8 +122,6 @@ const MESSAGE_STOP_EVENT = {
   message_id: 99,
 };
 
-// ── tests ─────────────────────────────────────────────────────────────────────
-
 describe('useStream — BUG-1: duplicate user message prevention', () => {
   let qc: QueryClient;
 
@@ -155,7 +130,6 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
     qc = new QueryClient({
       defaultOptions: { queries: { retry: false, refetchOnWindowFocus: false } },
     });
-    // Reset mutable store state for every test
     storeState.streamingContent = 'AI reply';
     storeState.optimisticMessages = [makeMsg({ id: -1, content: 'Hello world', role: 'USER' })];
     storeState.streamingToolEvents = [];
@@ -175,19 +149,19 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
       await result.current.send({ threadId: THREAD_ID, message: 'Hello world' });
     });
 
-    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>(
-      ['threads', THREAD_ID, 'messages'],
-    );
+    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
+      'threads',
+      THREAD_ID,
+      'messages',
+    ]);
     const userMsgs = (cache?.pages[0].data ?? []).filter((m) => m.role === 'USER');
     expect(userMsgs).toHaveLength(1);
-    expect(userMsgs[0].id).toBe(-1); // the injected optimistic message
+    expect(userMsgs[0].id).toBe(-1);
   });
 
   it('does NOT inject the optimistic message when the real user message is already in the cache (BUG-1 fix)', async () => {
     mockCreateSseStream.mockResolvedValue(makeReader([MESSAGE_STOP_EVENT]));
 
-    // Simulate the race condition: useMessages fetched the real user message
-    // from the API BEFORE message_stop fired → BUG-1 would inject a duplicate
     const realUserMsg = makeMsg({ id: 55, content: 'Hello world', role: 'USER', orderIndex: 0 });
     qc.setQueryData(['threads', THREAD_ID, 'messages'], makeCacheData([realUserMsg]));
 
@@ -196,14 +170,14 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
       await result.current.send({ threadId: THREAD_ID, message: 'Hello world' });
     });
 
-    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>(
-      ['threads', THREAD_ID, 'messages'],
-    );
+    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
+      'threads',
+      THREAD_ID,
+      'messages',
+    ]);
     const userMsgs = (cache?.pages[0].data ?? []).filter((m) => m.role === 'USER');
 
-    // Must be exactly 1 — NOT 2 (the pre-BUG-1 behavior would produce 2)
     expect(userMsgs).toHaveLength(1);
-    // Must be the REAL message (id=55), not the optimistic placeholder (id=-1)
     expect(userMsgs[0].id).toBe(55);
   });
 
@@ -211,7 +185,6 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
     mockCreateSseStream.mockResolvedValue(makeReader([MESSAGE_STOP_EVENT]));
     storeState.optimisticMessages = [makeMsg({ id: -1, content: 'My new question', role: 'USER' })];
 
-    // Cache has an OLDER user message — different content, different turn
     const olderMsg = makeMsg({ id: 7, content: 'A different question', role: 'USER' });
     qc.setQueryData(['threads', THREAD_ID, 'messages'], makeCacheData([olderMsg]));
 
@@ -220,12 +193,13 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
       await result.current.send({ threadId: THREAD_ID, message: 'My new question' });
     });
 
-    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>(
-      ['threads', THREAD_ID, 'messages'],
-    );
+    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
+      'threads',
+      THREAD_ID,
+      'messages',
+    ]);
     const userMsgs = (cache?.pages[0].data ?? []).filter((m) => m.role === 'USER');
 
-    // Both messages should appear: the older real one + the new optimistic one
     expect(userMsgs).toHaveLength(2);
   });
 
@@ -240,11 +214,12 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
       await result.current.send({ threadId: THREAD_ID, message: 'Hello world' });
     });
 
-    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>(
-      ['threads', THREAD_ID, 'messages'],
-    );
+    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
+      'threads',
+      THREAD_ID,
+      'messages',
+    ]);
     const userMsgs = (cache?.pages[0].data ?? []).filter((m) => m.role === 'USER');
-    // No optimistic message → only the ASSISTANT reply is injected
     expect(userMsgs).toHaveLength(0);
   });
 
@@ -260,13 +235,15 @@ describe('useStream — BUG-1: duplicate user message prevention', () => {
       await result.current.send({ threadId: THREAD_ID, message: 'ask' });
     });
 
-    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>(
-      ['threads', THREAD_ID, 'messages'],
-    );
+    const cache = qc.getQueryData<InfiniteData<PaginatedResponse<Message>>>([
+      'threads',
+      THREAD_ID,
+      'messages',
+    ]);
     const assistantMsgs = (cache?.pages[0].data ?? []).filter((m) => m.role === 'ASSISTANT');
     expect(assistantMsgs).toHaveLength(1);
     expect(assistantMsgs[0].content).toBe('The AI answer');
-    expect(assistantMsgs[0].id).toBe(99); // from MESSAGE_STOP_EVENT.message_id
+    expect(assistantMsgs[0].id).toBe(99);
   });
 
   it('calls finalizeStream and clearOptimisticMessages after message_stop', async () => {

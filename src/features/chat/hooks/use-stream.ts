@@ -294,8 +294,6 @@ export function useStream() {
                     }
 
                     for (const opt of [...currentOptimistic].reverse()) {
-                      // Skip injection if a matching real message is already in the cache
-                      // (race: useMessages fetched the user message before message_stop fired)
                       const alreadyInCache = firstPage.data.some(
                         (m) => m.role === opt.role && m.content === opt.content,
                       );

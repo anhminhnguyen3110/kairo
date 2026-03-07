@@ -340,7 +340,9 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     if (text.length <= PASTE_AS_FILE_THRESHOLD) return;
     e.preventDefault();
     const filename = `pasted-text-${Date.now()}.txt`;
-    const file = new File([new Blob([text], { type: 'text/plain' })], filename, { type: 'text/plain' });
+    const file = new File([new Blob([text], { type: 'text/plain' })], filename, {
+      type: 'text/plain',
+    });
     filePreviewsRef.current.set(file, text.slice(0, 300));
     setPendingFiles((prev) => [...prev, file]);
   }, []);

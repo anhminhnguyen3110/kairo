@@ -28,28 +28,36 @@ describe('useChatStore', () => {
     });
 
     it('clears streaming state when not streaming', () => {
-      // Must start from a non-null thread so this is a true thread switch,
-      // not an isNewChatToThread transition (which intentionally skips the reset)
-      useChatStore.setState({ activeThreadId: 1, streamingContent: 'partial', streamingStatus: 'idle' });
+      useChatStore.setState({
+        activeThreadId: 1,
+        streamingContent: 'partial',
+        streamingStatus: 'idle',
+      });
       useChatStore.getState().setActiveThread(2);
       expect(useChatStore.getState().streamingContent).toBe('');
     });
 
     it('clears streaming content when changing to a different thread while streaming (F10 fix)', () => {
-      useChatStore.setState({ activeThreadId: 1, streamingContent: 'partial', streamingStatus: 'streaming' });
+      useChatStore.setState({
+        activeThreadId: 1,
+        streamingContent: 'partial',
+        streamingStatus: 'streaming',
+      });
       useChatStore.getState().setActiveThread(2);
       expect(useChatStore.getState().streamingContent).toBe('');
     });
 
     it('clears streaming content when changing to a different thread in saving state (F10 fix)', () => {
-      useChatStore.setState({ activeThreadId: 2, streamingContent: 'done text', streamingStatus: 'saving' });
+      useChatStore.setState({
+        activeThreadId: 2,
+        streamingContent: 'done text',
+        streamingStatus: 'saving',
+      });
       useChatStore.getState().setActiveThread(3);
       expect(useChatStore.getState().streamingContent).toBe('');
     });
 
     it('preserves optimisticMessages when transitioning from null → new thread (isNewChatToThread / BUG-1)', () => {
-      // Scenario: user sent a message from the /threads (new chat) page.
-      // The optimistic message must stay visible while the new thread loads.
       const msg = { id: -1, content: 'Hi', role: 'USER' } as never;
       useChatStore.setState({
         activeThreadId: null,
@@ -58,12 +66,10 @@ describe('useChatStore', () => {
       });
       useChatStore.getState().setActiveThread(42);
       expect(useChatStore.getState().activeThreadId).toBe(42);
-      // optimisticMessages must NOT be wiped — the user message would vanish otherwise
       expect(useChatStore.getState().optimisticMessages).toHaveLength(1);
     });
 
     it('clears optimisticMessages when switching between two existing threads', () => {
-      // Switching threads while an old optimistic message lingers must clean up
       const msg = { id: -1, content: 'Stale message', role: 'USER' } as never;
       useChatStore.setState({
         activeThreadId: 1,
@@ -83,7 +89,6 @@ describe('useChatStore', () => {
         streamingStatus: 'streaming',
       });
       useChatStore.getState().setActiveThread(99);
-      // The stream belongs to the new-chat→thread flow; must NOT be aborted
       expect(spy).not.toHaveBeenCalled();
     });
   });
