@@ -12,47 +12,69 @@ import {
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
+// Dedup concurrent refresh calls within the same Node.js process.
+// When the access token expires, multiple parallel requests all hit 401 and
+// try to refresh simultaneously. Without dedup, each one would call BE with
+// the *same* refresh token. Since BE uses rotating tokens (old token deleted
+// on first use), only the first request would succeed and the rest would
+// delete both cookies, causing an unexpected logout.
+// Key: last 16 chars of the old refresh token (enough to identify it uniquely).
+const refreshInFlight = new Map<
+  string,
+  Promise<{ accessToken: string; refreshToken: string } | null>
+>();
+
+function callBeRefresh(
+  refreshToken: string,
+): Promise<{ accessToken: string; refreshToken: string } | null> {
+  const key = refreshToken.slice(-16);
+  const existing = refreshInFlight.get(key);
+  if (existing) return existing;
+
+  const promise = (async () => {
+    let response: Response;
+    try {
+      response = await fetch(getBeUrl('/api/v1/auth/refresh'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+    } catch {
+      return null;
+    }
+    if (!response.ok) return null;
+    const data = await safeJson<{ data: { accessToken: string; refreshToken: string } }>(response);
+    return data?.data ?? null;
+  })().finally(() => refreshInFlight.delete(key));
+
+  refreshInFlight.set(key, promise);
+  return promise;
+}
+
 async function refreshTokens(): Promise<string | null> {
   const cookieStore = await cookies();
   const refreshToken = cookieStore.get(COOKIE_REFRESH_TOKEN)?.value;
 
   if (!refreshToken) return null;
 
-  let response: Response;
-  try {
-    response = await fetch(getBeUrl('/api/v1/auth/refresh'), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
-    });
-  } catch {
-    return null;
-  }
+  const tokens = await callBeRefresh(refreshToken);
 
-  if (!response.ok) {
+  if (!tokens) {
     cookieStore.delete(COOKIE_ACCESS_TOKEN);
     cookieStore.delete(COOKIE_REFRESH_TOKEN);
     return null;
   }
 
-  const data = await safeJson<{ data: { accessToken: string; refreshToken: string } }>(response);
-
-  if (!data?.data) {
-    cookieStore.delete(COOKIE_ACCESS_TOKEN);
-    cookieStore.delete(COOKIE_REFRESH_TOKEN);
-    return null;
-  }
-
-  cookieStore.set(COOKIE_ACCESS_TOKEN, data.data.accessToken, {
+  cookieStore.set(COOKIE_ACCESS_TOKEN, tokens.accessToken, {
     ...cookieOptions,
     maxAge: ACCESS_TOKEN_MAX_AGE,
   });
-  cookieStore.set(COOKIE_REFRESH_TOKEN, data.data.refreshToken, {
+  cookieStore.set(COOKIE_REFRESH_TOKEN, tokens.refreshToken, {
     ...cookieOptions,
     maxAge: REFRESH_TOKEN_MAX_AGE,
   });
 
-  return data.data.accessToken;
+  return tokens.accessToken;
 }
 
 async function forwardToBe(

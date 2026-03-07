@@ -81,7 +81,8 @@ export const useChatStore = create<ChatState>()(
       set((state) => {
         state.activeThreadId = id;
 
-        if (isChangingThread) {
+        if (isChangingThread && !isNewChatToThread) {
+          // True thread switch — reset all streaming state
           state.streamingStatus = 'idle';
           state.streamingError = null;
           state.streamingContent = '';
@@ -90,7 +91,7 @@ export const useChatStore = create<ChatState>()(
           state.abortController = null;
           state.streamingSessionId = null;
           state.optimisticMessages = [];
-        } else if (state.streamingStatus !== 'streaming' && state.streamingStatus !== 'saving') {
+        } else if (!isChangingThread && state.streamingStatus !== 'streaming' && state.streamingStatus !== 'saving') {
           state.streamingStatus = 'idle';
           state.streamingContent = '';
           state.streamingToolEvents = [];

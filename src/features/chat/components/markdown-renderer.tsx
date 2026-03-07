@@ -16,6 +16,7 @@ import rehypeKatex from 'rehype-katex';
  * `$$...$$` / `$...$` syntax that remark-math v6 understands.
  *   \[...\]  →  $$\n...\n$$   (display math)
  *   \(...\)  →  $...$          (inline math)
+ *   [...] containing \-commands  →  $$\n...\n$$   (bare bracket display math)
  */
 function preprocessLaTeX(content: string): string {
   // Display math: \[ ... \] → $$\n...\n$$
@@ -25,6 +26,12 @@ function preprocessLaTeX(content: string): string {
   // Inline math: \( ... \) → $...$
   result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_match, math: string) => {
     return `$${math.trim()}$`;
+  });
+  // Bare display math: [...] blocks that contain at least one LaTeX \-command → $$\n...\n$$
+  // Guard: only match when content has a backslash-letter sequence (\frac, \sqrt, etc.)
+  // to avoid converting regular markdown links [text](url) or footnotes.
+  result = result.replace(/\[([^\[\]]*?\\[a-zA-Z][^\[\]]*?)\]/g, (_match, math: string) => {
+    return `$$\n${math.trim()}\n$$`;
   });
   return result;
 }

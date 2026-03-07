@@ -13,12 +13,14 @@ import { useClickOutside } from '@/lib/hooks/use-click-outside';
 import { threadsApi } from '@/features/threads/api/threads-api';
 import { filesApi } from '@/features/files/api/files-api';
 import { THREADS_QUERY_KEY } from '@/features/threads/hooks/use-threads';
+import { getMessagesQueryKey } from '../hooks/use-messages';
 
 const ACCEPTED = '.pdf,.txt,.md,.docx,.doc,.csv,.json,.xml,.html,.htm';
 const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(','));
 const MAX_SIZE_MB = 10;
 const MAX_TEXTAREA_ROWS = 8;
 const LINE_HEIGHT_PX = 24;
+const PASTE_AS_FILE_THRESHOLD = 4000;
 
 interface MessageInputProps {
   threadId?: number;
@@ -26,13 +28,22 @@ interface MessageInputProps {
   variant?: 'centered' | 'bottom';
 }
 
-function FileCardSmall({ file, onRemove }: { file: File; onRemove: () => void }) {
+function FileCardSmall({
+  file,
+  preview,
+  onRemove,
+}: {
+  file: File;
+  preview?: string;
+  onRemove: () => void;
+}) {
   return (
     <div
       className="
       flex flex-col p-2.5 rounded-xl w-[110px] shrink-0
       bg-[#1C1B18] border border-[#3A3632] relative
     "
+      style={preview ? { minHeight: '110px' } : undefined}
     >
       <button
         type="button"
@@ -49,18 +60,34 @@ function FileCardSmall({ file, onRemove }: { file: File; onRemove: () => void })
         <X size={9} />
       </button>
 
-      <span className="text-[11px] text-stone-300 truncate leading-tight font-medium mt-1">
-        {file.name}
-      </span>
-      <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
-        {formatBytes(file.size)}
-      </span>
-      <span
-        className="self-start px-1.5 py-0.5 rounded text-[9px] font-bold
-                       bg-[#2A2724] text-stone-400 border border-[#3A3632] leading-none mt-2"
-      >
-        {fileExt(file.name)}
-      </span>
+      {preview ? (
+        <>
+          <p className="flex-1 min-h-0 text-[8px] text-stone-200 break-words line-clamp-[6] mt-1 leading-[1.35]">
+            {preview}
+          </p>
+          <span
+            className="self-start px-1.5 py-0.5 rounded text-[9px] font-bold
+                         bg-transparent text-stone-100 border border-stone-400 leading-none mt-1.5"
+          >
+            PASTED
+          </span>
+        </>
+      ) : (
+        <>
+          <span className="text-[11px] text-stone-300 truncate leading-tight font-medium mt-1">
+            {file.name}
+          </span>
+          <span className="text-[10px] text-stone-500 mt-0.5 leading-tight">
+            {formatBytes(file.size)}
+          </span>
+          <span
+            className="self-start px-1.5 py-0.5 rounded text-[9px] font-bold
+                           bg-[#2A2724] text-stone-400 border border-[#3A3632] leading-none mt-2"
+          >
+            {fileExt(file.name)}
+          </span>
+        </>
+      )}
     </div>
   );
 }
@@ -69,6 +96,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const plusMenuRef = useRef<HTMLDivElement>(null);
+  const filePreviewsRef = useRef<WeakMap<File, string>>(new WeakMap());
   const [plusMenuOpen, setPlusMenuOpen] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [hasText, setHasText] = useState(false);
@@ -264,7 +292,14 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
       abortSseStream(streamingSessionId).catch(() => null);
     }
     abortStream();
-  }, [streamingSessionId, abortStream]);
+    // Re-fetch messages after a short delay so the backend has time to persist
+    // whatever partial content it produced before the abort signal was processed.
+    if (threadId) {
+      setTimeout(() => {
+        void qc.invalidateQueries({ queryKey: getMessagesQueryKey(threadId) });
+      }, 800);
+    }
+  }, [streamingSessionId, abortStream, threadId, qc]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
@@ -300,9 +335,19 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     setPendingFiles((prev) => prev.filter((_, i) => i !== idx));
   }, []);
 
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const text = e.clipboardData.getData('text');
+    if (text.length <= PASTE_AS_FILE_THRESHOLD) return;
+    e.preventDefault();
+    const filename = `pasted-text-${Date.now()}.txt`;
+    const file = new File([new Blob([text], { type: 'text/plain' })], filename, { type: 'text/plain' });
+    filePreviewsRef.current.set(file, text.slice(0, 300));
+    setPendingFiles((prev) => [...prev, file]);
+  }, []);
+
   const hasActiveFeature = webSearchEnabled;
 
-  const wrapperClass = variant === 'centered' ? 'w-full px-4' : 'px-4 pb-4 pt-2';
+  const wrapperClass = variant === 'centered' ? 'w-full px-4' : 'bg-chat-bg px-4 pb-4 pt-2';
 
   return (
     <div className={wrapperClass}>
@@ -326,7 +371,12 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
         {pendingFiles.length > 0 && (
           <div className="flex gap-2 px-3 pt-3 flex-wrap">
             {pendingFiles.map((f, i) => (
-              <FileCardSmall key={`${f.name}-${i}`} file={f} onRemove={() => removeFile(i)} />
+              <FileCardSmall
+                key={`${f.name}-${i}`}
+                file={f}
+                preview={filePreviewsRef.current.get(f)}
+                onRemove={() => removeFile(i)}
+              />
             ))}
           </div>
         )}
@@ -342,6 +392,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
           "
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           disabled={isStreaming || isCreating}
         />
 

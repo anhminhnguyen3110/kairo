@@ -13,10 +13,10 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
   const queryClient = useQueryClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showTimezone, setShowTimezone] = useState(false);
-  const { data: me } = useMe();
+  const { data: me, isLoading: meLoading } = useMe();
 
-  const displayName = me?.email ? displayNameFromEmail(me.email) : 'Account';
-  const initial = displayName.charAt(0).toUpperCase();
+  const displayName = meLoading ? null : me?.email ? displayNameFromEmail(me.email) : 'Account';
+  const initial = displayName ? displayName.charAt(0).toUpperCase() : '…';
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -50,7 +50,11 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
 
           {!collapsed && (
             <>
-              <span className="flex-1 text-left truncate">{displayName}</span>
+              <span className="flex-1 text-left truncate">
+                {displayName ?? (
+                  <span className="inline-block w-20 h-3 rounded bg-[#333333] animate-pulse" />
+                )}
+              </span>
               <button
                 onClick={() => setShowTimezone(true)}
                 title="Timezone settings"

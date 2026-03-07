@@ -10,9 +10,10 @@ import { ErrorBoundary } from '@/components/error-boundary';
 
 interface MessageListProps {
   threadId: number;
+  children?: React.ReactNode;
 }
 
-export function MessageList({ threadId }: MessageListProps) {
+export function MessageList({ threadId, children }: MessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
   const topRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -82,9 +83,6 @@ export function MessageList({ threadId }: MessageListProps) {
       .reverse()
       .flatMap((p) => [...p.data].reverse()) ?? [];
 
-  // Deduplicate: hide optimistic messages whose content already arrived from the server.
-  // This prevents a duplicate flash when invalidateQueries resolves before
-  // clearOptimisticMessages is called (race between message_stop and [DONE]).
   const deduplicatedOptimistic = optimisticMessages.filter(
     (opt) => !allMessages.some((m) => m.role === opt.role && m.content === opt.content),
   );
@@ -92,8 +90,7 @@ export function MessageList({ threadId }: MessageListProps) {
   return (
     <div className="flex-1 relative overflow-hidden flex flex-col">
       <div ref={containerRef} className="flex-1 overflow-y-auto">
-        <div className="max-w-[768px] mx-auto px-6 py-4">
-          {}
+        <div className="max-w-[768px] mx-auto px-6 pt-8 flex flex-col">
           <div ref={topRef} className="mb-2">
             {isFetchingNextPage && (
               <div className="flex justify-center py-4">
@@ -129,14 +126,17 @@ export function MessageList({ threadId }: MessageListProps) {
 
           {}
           <div ref={bottomRef} />
+          <div className="h-12" />
         </div>
       </div>
+
+      {children}
 
       {showScrollBtn && (
         <button
           onClick={scrollToBottom}
           aria-label="Scroll to bottom"
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-stone-700 hover:bg-stone-600 border border-stone-600 text-stone-200 shadow-lg transition-colors"
+          className="absolute bottom-36 left-1/2 -translate-x-1/2 z-10 flex items-center justify-center w-8 h-8 rounded-full bg-stone-700 hover:bg-stone-600 border border-stone-600 text-stone-200 shadow-lg transition-colors"
         >
           <ChevronDown size={16} />
         </button>

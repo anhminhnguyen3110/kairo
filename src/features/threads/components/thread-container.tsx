@@ -43,8 +43,9 @@ export function ThreadContainer({ threadId }: ThreadContainerProps) {
   return (
     <div className="flex flex-col h-full bg-chat-bg overflow-hidden">
       <ThreadHeader thread={thread} />
-      <MessageList threadId={threadId} />
-      <MessageInput threadId={threadId} />
+      <MessageList threadId={threadId}>
+        <MessageInput threadId={threadId} />
+      </MessageList>
       <FilePanel />
     </div>
   );

@@ -112,6 +112,7 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 - On send, files are uploaded to the backend before the SSE stream starts so the `fileId` is available to the agent's `extract_document` tool.
 - Supported types: PDF, TXT, Markdown, CSV (up to 10 MB).
 - Uploaded files persist in the thread and are listed in a collapsible files panel.
+- **Paste-to-file**: pasting text longer than 4 000 characters automatically converts it to a `.txt` file attachment instead of inserting into the input box.
 
 ### Thread Management
 

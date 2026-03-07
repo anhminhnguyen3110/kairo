@@ -52,6 +52,21 @@ export function useStream() {
       sizeBytes: f.size,
       mimeType: f.type,
     }));
+
+    // Add optimistic user message immediately so it's visible during file uploads
+    const optimisticMsg: Message = {
+      id: -1,
+      threadId: threadId ?? -1,
+      role: 'USER',
+      content: message,
+      toolCalls: null,
+      metadata: uploadedAttachments?.length ? { attachments: uploadedAttachments } : null,
+      orderIndex: -1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    addOptimisticMessage(optimisticMsg);
+
     if (files?.length && threadId && !preloadedFileIds?.length) {
       const uploadResults: Awaited<ReturnType<typeof filesApi.upload>>[] = [];
       for (const f of files) {
@@ -84,19 +99,6 @@ export function useStream() {
         void qc.invalidateQueries({ queryKey: ['files', threadId] });
       }
     }
-
-    const optimisticMsg: Message = {
-      id: -1,
-      threadId: threadId ?? -1,
-      role: 'USER',
-      content: message,
-      toolCalls: null,
-      metadata: uploadedAttachments?.length ? { attachments: uploadedAttachments } : null,
-      orderIndex: -1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    addOptimisticMessage(optimisticMsg);
 
     let confirmedThreadId: number | undefined = threadId;
 

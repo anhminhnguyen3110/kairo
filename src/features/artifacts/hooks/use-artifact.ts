@@ -20,7 +20,7 @@ export function useArtifact(artifactId: string) {
 }
 
 export function useArtifacts(threadId: number | undefined) {
-  const { setArtifacts, openArtifact, clearArtifacts } = useArtifactStore();
+  const { setArtifacts, clearArtifacts } = useArtifactStore();
 
   const query = useQuery({
     queryKey: ['artifacts', threadId],
@@ -36,13 +36,8 @@ export function useArtifacts(threadId: number | undefined) {
     }
     if (query.data) {
       setArtifacts(query.data);
-
-      if (query.data.length > 0) {
-        const last = query.data[query.data.length - 1];
-        openArtifact(last.id);
-      }
     }
-  }, [query.data, threadId, clearArtifacts, openArtifact, setArtifacts]);
+  }, [query.data, threadId, clearArtifacts, setArtifacts]);
 
   return query;
 }

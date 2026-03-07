@@ -88,29 +88,31 @@ export function ArtifactPanel() {
   return (
     <aside
       style={isMobile ? undefined : { width: panelWidth }}
-      className={`flex flex-col border-l border-chat-border bg-[#1A1A1A] overflow-hidden ${
-        isMobile ? 'fixed inset-0 z-50' : 'relative shrink-0'
+      className={`flex flex-col border-l border-chat-border bg-[#1A1A1A] ${
+        isMobile ? 'fixed inset-0 z-50 overflow-hidden' : 'relative shrink-0'
       }`}
     >
       {!isMobile && (
         <div
           onMouseDown={onDragMouseDown}
-          className="absolute left-0 top-0 bottom-0 w-2 z-10 cursor-col-resize select-none group"
+          className="absolute -left-1 top-0 bottom-0 w-2 z-10 cursor-col-resize select-none group"
           title="Drag to resize"
         >
-          {/* Visual indicator bar */}
-          <div className="absolute left-0.5 top-0 bottom-0 w-0.5 bg-[#2A2A2A] group-hover:bg-[#CC785C]/70 group-active:bg-[#CC785C] transition-colors" />
+          {/* Visual indicator bar — centered on the border, invisible at rest */}
+          <div className="absolute left-[3px] top-0 bottom-0 w-0.5 opacity-0 group-hover:opacity-100 group-hover:bg-[#CC785C]/70 group-active:bg-[#CC785C] transition-opacity" />
         </div>
       )}
 
-      <ArtifactToolbar
-        artifact={artifact}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        onRefresh={() => setRefreshKey((k) => k + 1)}
-      />
-      <div className="flex-1 overflow-hidden">
-        <ArtifactContent artifact={artifact} viewMode={viewMode} refreshKey={refreshKey} />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <ArtifactToolbar
+          artifact={artifact}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
+          onRefresh={() => setRefreshKey((k) => k + 1)}
+        />
+        <div className="flex-1 overflow-hidden">
+          <ArtifactContent artifact={artifact} viewMode={viewMode} refreshKey={refreshKey} />
+        </div>
       </div>
     </aside>
   );

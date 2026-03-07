@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { Pencil, Code2, Search, Lightbulb, Menu } from 'lucide-react';
 import { MessageInput } from '@/features/chat/components/message-input';
@@ -38,7 +38,9 @@ export function NewChatContainer() {
   }, [clearOptimisticMessages]);
 
   const handleNewThread = (newThreadId: number) => {
-    router.push(`/threads/${newThreadId}`);
+    startTransition(() => {
+      router.push(`/threads/${newThreadId}`);
+    });
   };
 
   const hasActivity = optimisticMessages.length > 0;

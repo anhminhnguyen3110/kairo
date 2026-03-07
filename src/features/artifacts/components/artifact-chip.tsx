@@ -1,6 +1,6 @@
 'use client';
 
-import { Code2, FileCode2, Download } from 'lucide-react';
+import { Code2, FileCode2, Download, Eye } from 'lucide-react';
 import { useArtifactStore } from '@/stores/artifact-store';
 import { ArtifactType } from '@/types';
 import { artifactsApi } from '../api/artifacts-api';
@@ -24,12 +24,8 @@ export function ArtifactChip({ artifactId, title, type }: ArtifactChipProps) {
 
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#1E1E1E] border border-[#2A2A2A] my-1.5 w-full">
-      {/* Clickable area → opens panel */}
-      <button
-        type="button"
-        onClick={() => openArtifact(artifactId)}
-        className="flex items-center gap-2.5 flex-1 min-w-0 text-left"
-      >
+      {/* Info — non-clickable */}
+      <div className="flex items-center gap-2.5 flex-1 min-w-0">
         <div className="w-9 h-9 rounded-lg bg-[#2A2A2A] border border-[#333333] flex items-center justify-center shrink-0">
           {type === 'mermaid' || type === 'svg' || type === 'code' ? (
             <FileCode2 size={16} className="text-stone-400" />
@@ -43,9 +39,21 @@ export function ArtifactChip({ artifactId, title, type }: ArtifactChipProps) {
             {category} · {typeLabel}
           </span>
         </div>
+      </div>
+
+      {/* View button */}
+      <button
+        type="button"
+        onClick={() => openArtifact(artifactId)}
+        className="shrink-0 px-3 py-1.5 text-sm font-medium text-stone-200
+                   bg-[#2A2A2A] hover:bg-[#333333] border border-[#3A3A3A]
+                   rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <Eye size={13} />
+        View
       </button>
 
-      {downloadUrl ? (
+      {downloadUrl && (
         <a
           href={downloadUrl}
           download
@@ -56,15 +64,6 @@ export function ArtifactChip({ artifactId, title, type }: ArtifactChipProps) {
         >
           Download
         </a>
-      ) : (
-        <button
-          type="button"
-          onClick={() => openArtifact(artifactId)}
-          className="shrink-0 p-1.5 text-stone-500 hover:text-stone-300 transition-colors"
-          title="Open artifact"
-        >
-          <Download size={14} />
-        </button>
       )}
     </div>
   );
