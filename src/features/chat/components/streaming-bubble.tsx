@@ -19,7 +19,6 @@ export function StreamingBubble() {
   } = useChatStore();
   const { artifacts } = useArtifactStore();
 
-  // Collect artifact objects that were emitted via SSE during this stream
   const streamingArtifacts = streamingArtifactIds
     .map((id) => artifacts[id] as Artifact | undefined)
     .filter(Boolean) as Artifact[];
@@ -39,7 +38,6 @@ export function StreamingBubble() {
 
   return (
     <div className="py-6">
-      {}
       {streamingToolEvents.map((event) => (
         <ErrorBoundary key={event.id} label="Tool event">
           <ToolEventCard
@@ -51,12 +49,10 @@ export function StreamingBubble() {
         </ErrorBoundary>
       ))}
 
-      {}
       <div className="relative">
         {streamingContent ? (
           <>
             <MarkdownRenderer content={streamingContent} />
-            {}
             {streamingStatus === 'streaming' && (
               <span className="inline-block w-0.5 h-4 bg-[#CC785C] ml-0.5 animate-pulse" />
             )}
@@ -70,7 +66,6 @@ export function StreamingBubble() {
         )}
       </div>
 
-      {}
       {streamingArtifacts.length > 0 && (
         <div className="flex flex-col gap-1 mt-3">
           {streamingArtifacts.map((art) => (

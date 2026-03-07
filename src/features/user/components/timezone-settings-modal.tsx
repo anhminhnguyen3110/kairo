@@ -7,7 +7,6 @@ import { useUpdateProfile } from '../hooks/use-update-profile';
 
 /** A curated list of IANA timezones covering most users. */
 const COMMON_TIMEZONES = [
-  // Auto-detect option added dynamically
   { label: 'UTC', value: 'UTC' },
   { label: 'UTC-12 (Baker Island)', value: 'Etc/GMT+12' },
   { label: 'UTC-11 (Samoa)', value: 'Pacific/Pago_Pago' },
@@ -41,14 +40,12 @@ export function TimezoneSettingsModal({ onClose }: TimezoneSettingsModalProps) {
   const { mutate: updateProfile, isPending } = useUpdateProfile();
   const backdropRef = useRef<HTMLDivElement>(null);
 
-  // Detected browser timezone
   const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   const [selected, setSelected] = useState<string>(() => {
     return me?.timezone ?? detectedTz;
   });
 
-  // Sync if `me` loads after modal opens
   useEffect(() => {
     if (me?.timezone) setSelected(me.timezone);
   }, [me?.timezone]);
@@ -61,7 +58,6 @@ export function TimezoneSettingsModal({ onClose }: TimezoneSettingsModalProps) {
     if (e.target === backdropRef.current) onClose();
   };
 
-  // Build the options list: always prepend auto-detect
   const options = [
     { label: `Auto-detect (${detectedTz})`, value: detectedTz },
     ...COMMON_TIMEZONES.filter((tz) => tz.value !== detectedTz),
@@ -74,7 +70,6 @@ export function TimezoneSettingsModal({ onClose }: TimezoneSettingsModalProps) {
       className="fixed inset-0 z-50 flex items-end justify-start sm:items-center sm:justify-center bg-black/40"
     >
       <div className="w-full max-w-sm mx-4 mb-4 sm:mb-0 bg-[#1E1C16] border border-[#28261F] rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[#28261F]">
           <div className="flex items-center gap-2 text-sm font-medium text-stone-200">
             <Globe size={14} className="text-[#CC785C]" />
@@ -88,7 +83,6 @@ export function TimezoneSettingsModal({ onClose }: TimezoneSettingsModalProps) {
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-4 py-3">
           <label className="block text-xs text-stone-400 mb-1" htmlFor="tz-select">
             Select your timezone
@@ -111,7 +105,6 @@ export function TimezoneSettingsModal({ onClose }: TimezoneSettingsModalProps) {
           </p>
         </div>
 
-        {/* Footer */}
         <div className="flex justify-end gap-2 px-4 py-3 border-t border-[#28261F]">
           <button
             onClick={onClose}

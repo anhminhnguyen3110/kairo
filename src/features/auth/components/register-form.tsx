@@ -6,9 +6,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { registerSchema, type RegisterFormData } from '../schemas/register-schema';
 import { authApi } from '../api/auth-api';
 import { ApiClientError } from '@/lib/api-client';
+import { ME_QUERY_KEY } from '@/features/user/hooks/use-me';
 
 function getFriendlyRegisterError(err: unknown): string {
   if (err instanceof ApiClientError) {
@@ -23,6 +25,7 @@ function getFriendlyRegisterError(err: unknown): string {
 
 export function RegisterForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -42,7 +45,11 @@ export function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     setError(null);
     try {
-      await authApi.register({ email: data.email, password: data.password });
+      const response = await authApi.register({ email: data.email, password: data.password });
+      queryClient.clear();
+      if (response?.user) {
+        queryClient.setQueryData(ME_QUERY_KEY, response.user);
+      }
       router.push('/threads');
       router.refresh();
     } catch (err) {

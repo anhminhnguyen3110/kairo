@@ -61,7 +61,6 @@ describe('useClickOutside()', () => {
 
     unmount();
     fireMousedown(outside);
-    // Handler should NOT be called since listener was removed
     expect(handler).not.toHaveBeenCalled();
 
     document.body.removeChild(outside);

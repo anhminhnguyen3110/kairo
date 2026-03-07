@@ -19,7 +19,6 @@ export function Sidebar() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useThreads();
 
-  // Detect mobile breakpoint and update store accordingly
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
     const handle = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
@@ -63,7 +62,6 @@ export function Sidebar() {
         ${sidebarOpen ? 'max-md:translate-x-0' : 'max-md:-translate-x-full'}
         md:shrink-0 ${sidebarOpen ? 'md:w-[260px]' : 'md:w-[60px]'}`}
       >
-        {/* Header */}
         <div className="flex items-center justify-between px-2 pt-3 pb-3">
           <button
             type="button"
@@ -92,7 +90,6 @@ export function Sidebar() {
 
         {/* Action buttons */}
         <div className="w-full px-2 pb-2 space-y-1">
-          {/* New chat button */}
           <button
             type="button"
             onClick={() => {
@@ -112,7 +109,6 @@ export function Sidebar() {
             </span>
           </button>
 
-          {/* Search button */}
           <button
             type="button"
             onClick={openSearch}
@@ -190,7 +186,6 @@ export function Sidebar() {
           <div className="flex-1" />
         )}
 
-        {/* User menu */}
         <UserMenu collapsed={!sidebarOpen} />
       </aside>
     </>

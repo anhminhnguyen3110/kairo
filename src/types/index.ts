@@ -81,7 +81,6 @@ export interface Artifact {
   messageId: number;
 }
 
-/** Lightweight attachment metadata stored in chat UI (not the full FileAttachment record) */
 export interface AttachmentMeta {
   fileId?: number;
   name: string;
@@ -89,7 +88,6 @@ export interface AttachmentMeta {
   mimeType: string;
 }
 
-/** Metadata for an in-progress streaming artifact (before content is finalised) */
 export interface StreamingArtifactMeta {
   type: ArtifactType;
   title: string;

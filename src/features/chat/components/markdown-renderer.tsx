@@ -8,8 +8,26 @@ import { oneDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/copy-button';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 
-// ─── Code Block ──────────────────────────────────────────────────────────────
+/**
+ * Normalize LaTeX delimiters produced by various LLM providers into the
+ * `$$...$$` / `$...$` syntax that remark-math v6 understands.
+ *   \[...\]  →  $$\n...\n$$   (display math)
+ *   \(...\)  →  $...$          (inline math)
+ */
+function preprocessLaTeX(content: string): string {
+  // Display math: \[ ... \] → $$\n...\n$$
+  let result = content.replace(/\\\[([\s\S]*?)\\\]/g, (_match, math: string) => {
+    return `$$\n${math.trim()}\n$$`;
+  });
+  // Inline math: \( ... \) → $...$
+  result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_match, math: string) => {
+    return `$${math.trim()}$`;
+  });
+  return result;
+}
 
 function CodeBlock({ language, code }: { language: string; code: string }) {
   return (
@@ -50,10 +68,7 @@ function CodeBlock({ language, code }: { language: string; code: string }) {
   );
 }
 
-// ─── Markdown Components ──────────────────────────────────────────────────────
-
 const markdownComponents: Components = {
-  // Code: detect block vs inline by presence of 'language-' class
   code({ className, children, ...rest }) {
     const match = /language-(\w+)/.exec(className ?? '');
     const isBlock =
@@ -64,7 +79,6 @@ const markdownComponents: Components = {
       return <CodeBlock language={match?.[1] ?? ''} code={code} />;
     }
 
-    // Inline code
     return (
       <code
         className="px-1.5 py-0.5 rounded-md text-[0.82em] font-mono bg-[#2A2A2A] text-[#E8C98A] border border-[#3A3A3A]"
@@ -75,12 +89,10 @@ const markdownComponents: Components = {
     );
   },
 
-  // Pre: unwrap — code block is handled in `code` component above
   pre({ children }) {
     return <>{children}</>;
   },
 
-  // Headings
   h1: ({ children }) => (
     <h1 className="text-xl font-bold text-[#ECECEC] mt-6 mb-3 pb-2 border-b border-[#3A3A3A] first:mt-0">
       {children}
@@ -96,12 +108,10 @@ const markdownComponents: Components = {
     <h4 className="text-sm font-semibold text-[#D4D0C8] mt-3 mb-1.5 first:mt-0">{children}</h4>
   ),
 
-  // Paragraph
   p: ({ children }) => (
     <p className="leading-[1.75] my-3 text-[#ECECEC] first:mt-0 last:mb-0">{children}</p>
   ),
 
-  // Links
   a: ({ href, children }) => (
     <a
       href={href}
@@ -114,7 +124,6 @@ const markdownComponents: Components = {
     </a>
   ),
 
-  // Lists
   ul: ({ children }) => (
     <ul className="my-3 pl-5 space-y-1 list-disc marker:text-[#CC785C]/70 first:mt-0 last:mb-0">
       {children}
@@ -127,21 +136,17 @@ const markdownComponents: Components = {
   ),
   li: ({ children }) => <li className="text-[#ECECEC] leading-[1.7] pl-0.5">{children}</li>,
 
-  // Blockquote
   blockquote: ({ children }) => (
     <blockquote className="my-4 pl-4 border-l-2 border-[#CC785C]/50 bg-[#CC785C]/5 rounded-r-lg py-2 pr-3 text-[#B0AAA0] italic">
       {children}
     </blockquote>
   ),
 
-  // Horizontal rule
   hr: () => <hr className="my-5 border-[#3A3A3A]" />,
 
-  // Strong / Em
   strong: ({ children }) => <strong className="font-semibold text-[#ECECEC]">{children}</strong>,
   em: ({ children }) => <em className="italic text-[#D4D0C8]">{children}</em>,
 
-  // Table
   table: ({ children }) => (
     <div className="my-4 overflow-x-auto rounded-xl border border-[#3A3A3A]">
       <table className="w-full text-sm border-collapse">{children}</table>
@@ -160,8 +165,6 @@ const markdownComponents: Components = {
   td: ({ children }) => <td className="px-4 py-2.5 text-[#ECECEC] text-sm">{children}</td>,
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 interface MarkdownRendererProps {
   content: string;
   className?: string;
@@ -173,8 +176,12 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
 }: MarkdownRendererProps) {
   return (
     <div className={cn('text-sm text-[#ECECEC]', className)}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-        {content}
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm, remarkMath]}
+        rehypePlugins={[rehypeKatex]}
+        components={markdownComponents}
+      >
+        {preprocessLaTeX(content)}
       </ReactMarkdown>
     </div>
   );

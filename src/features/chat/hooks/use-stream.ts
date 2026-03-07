@@ -46,7 +46,6 @@ export function useStream() {
     const abortController = new AbortController();
     startStream(abortController);
 
-    // Upload any raw File objects BEFORE streaming so we have numeric IDs ready
     let resolvedFileIds: number[] | undefined = preloadedFileIds;
     const uploadedAttachments = files?.map((f) => ({
       name: f.name,
@@ -61,6 +60,13 @@ export function useStream() {
           uploadResults.push(result);
         } catch (err) {
           console.warn('[send] File upload failed', f.name, err);
+          // Abort the entire send so the user knows the file was not attached.
+          setStreamError(
+            'File upload failed. Please ensure the file is under 10 MB and try again.',
+          );
+          finalizeStream();
+          clearOptimisticMessages();
+          return;
         }
       }
       if (uploadResults.length > 0) {
@@ -92,6 +98,8 @@ export function useStream() {
     };
     addOptimisticMessage(optimisticMsg);
 
+    let confirmedThreadId: number | undefined = threadId;
+
     try {
       const reader = await createSseStream(
         {
@@ -105,7 +113,7 @@ export function useStream() {
         abortController.signal,
       );
 
-      let confirmedThreadId: number | undefined = threadId;
+      confirmedThreadId = threadId;
       let buffer = '';
       let toolEventCounter = 0;
       const activeToolEventIds = new Map<string, string>();
@@ -126,6 +134,13 @@ export function useStream() {
           const rawData = trimmed.slice('data:'.length).trim();
 
           if (rawData === '[DONE]') {
+            // Safety net: finalise if message_stop was never received (e.g. stream
+            // closed without a proper message_stop from the backend).
+            const { streamingStatus: s } = useChatStore.getState();
+            if (s === 'streaming' || s === 'saving') {
+              finalizeStream();
+              clearOptimisticMessages();
+            }
             return;
           }
 
@@ -137,7 +152,6 @@ export function useStream() {
           }
 
           switch (event.type) {
-            // Skip ping event (used to seed Redis Stream)
             case 'ping':
               continue;
 
@@ -221,7 +235,6 @@ export function useStream() {
               };
               const finalThreadId = stop.thread_id ?? confirmedThreadId;
 
-              // Navigate to a newly created thread before finalizing the stream
               if (!threadId && finalThreadId) {
                 if (onNewThread) {
                   onNewThread(finalThreadId);
@@ -233,19 +246,16 @@ export function useStream() {
                 }, 100);
               }
 
-              // Inject AI response into cache immediately so StreamingBubble can disappear
-              // without a flash — the real MessageBubble is already in the cache.
+              let cacheInjected = false;
               if (finalThreadId) {
                 const currentContent = useChatStore.getState().streamingContent;
                 const currentOptimistic = useChatStore.getState().optimisticMessages;
                 const currentToolEvents = useChatStore.getState().streamingToolEvents;
 
-                // Map streaming tool events → ToolCall[] (exclude think blocks)
                 const toolCallsForCache = currentToolEvents
                   .filter((e) => e.name !== 'think')
                   .map((e) => ({ id: e.id, name: e.name, input: e.input, output: e.output }));
 
-                // Build artifacts from stop event (IDs must be strings to match artifact store)
                 const artifactsForCache =
                   stop.artifacts?.map((a) => ({
                     id: String(a.id),
@@ -261,11 +271,8 @@ export function useStream() {
                     if (!old?.pages?.length) return old;
                     const [firstPage, ...rest] = old.pages;
 
-                    // Build the list of messages to prepend (newest-first, matching page order)
                     const toInject: Message[] = [];
 
-                    // Inject AI message with tool calls + artifacts so they survive the
-                    // StreamingBubble → MessageBubble transition without disappearing.
                     if (currentContent) {
                       toInject.push({
                         id: stop.message_id ?? -Date.now(),
@@ -284,8 +291,6 @@ export function useStream() {
                       });
                     }
 
-                    // Inject optimistic user messages so they stay visible
-                    // (deduplicatedOptimistic will hide them from optimistic layer)
                     for (const opt of [...currentOptimistic].reverse()) {
                       toInject.push({
                         ...opt,
@@ -293,6 +298,7 @@ export function useStream() {
                       });
                     }
 
+                    cacheInjected = true;
                     return {
                       ...old,
                       pages: [{ ...firstPage, data: [...toInject, ...firstPage.data] }, ...rest],
@@ -301,16 +307,16 @@ export function useStream() {
                 );
               }
 
-              // Immediately unlock UI — user can send next message right away
               finalizeStream();
-              if (threadId) clearOptimisticMessages();
+              clearOptimisticMessages();
 
-              // Mark caches as stale — will silently refetch on next focus/navigation,
-              // not immediately. This avoids the burst of API calls right after stream.
               if (finalThreadId) {
+                // If the cache was empty when message_stop fired (race condition: stream
+                // finished before useMessages loaded the page), trigger an active refetch so
+                // the assistant reply appears immediately without requiring a manual reload.
                 void qc.invalidateQueries({
                   queryKey: getMessagesQueryKey(finalThreadId),
-                  refetchType: 'none',
+                  refetchType: cacheInjected ? 'none' : 'active',
                 });
                 void qc.invalidateQueries({
                   queryKey: THREADS_QUERY_KEY,
@@ -344,7 +350,6 @@ export function useStream() {
             }
 
             case 'meta': {
-              // The SSE JSON is flat: { type: 'meta', threadId, messageId, title? }
               const metaData = event as unknown as { threadId: number; title?: string };
               confirmedThreadId = metaData.threadId;
               if (metaData.title) {
@@ -427,6 +432,13 @@ export function useStream() {
           }
         }
       }
+      // Safety net: stream ended with done=true (backend closed the connection)
+      // without emitting message_stop — ensure we never get stuck in streaming.
+      const { streamingStatus: sAfter } = useChatStore.getState();
+      if (sAfter === 'streaming' || sAfter === 'saving') {
+        finalizeStream();
+        clearOptimisticMessages();
+      }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         let errorMessage = 'Something went wrong. Please try again.';
@@ -435,7 +447,9 @@ export function useStream() {
             errorMessage =
               'Too many requests — you have been rate limited. Please wait a moment and try again.';
           } else if (err.statusCode === 401) {
-            errorMessage = 'Session expired. Please refresh the page and log in again.';
+            errorMessage = 'Session expired. Redirecting to login…';
+            const next = encodeURIComponent(window.location.pathname + window.location.search);
+            window.location.href = `/login?next=${next}`;
           } else if (err.statusCode === 503) {
             errorMessage = 'The AI service is currently unavailable. Please try again later.';
           } else if (err.statusCode >= 500) {
@@ -445,19 +459,20 @@ export function useStream() {
           }
         }
         setStreamError(errorMessage);
-        // Clean up optimistic messages so they don't ghost on retry
         finalizeStream();
         clearOptimisticMessages();
       } else {
-        // Refetch messages from DB so the saved user message reappears after abort
-        if (threadId) {
-          void qc.invalidateQueries({ queryKey: getMessagesQueryKey(threadId) }).then(() => {
-            finalizeStream();
-            clearOptimisticMessages();
-          });
-        } else {
-          finalizeStream();
-          clearOptimisticMessages();
+        // AbortError: user clicked "Stop generating".
+        // Finalise immediately (synchronously) so no deferred .then() can race
+        // against a new stream that the user starts right after aborting.
+        finalizeStream();
+        clearOptimisticMessages();
+        const tidToInvalidate = threadId ?? confirmedThreadId;
+        if (tidToInvalidate) {
+          // Invalidate with active refetch so the message list reflects the actual
+          // server state (which may include a partial/completed response from the
+          // backend despite the frontend abort).
+          void qc.invalidateQueries({ queryKey: getMessagesQueryKey(tidToInvalidate) });
         }
       }
     }

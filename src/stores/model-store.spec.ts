@@ -8,7 +8,6 @@ const INITIAL_STATE = { selection: null };
 beforeEach(async () => {
   vi.resetModules();
 
-  // Prevent localStorage persistence from leaking between tests
   vi.stubGlobal('localStorage', {
     getItem: vi.fn(() => null),
     setItem: vi.fn(),

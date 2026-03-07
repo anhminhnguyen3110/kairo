@@ -1,19 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
-/**
- * We import the zustand store directly and test its actions through the API
- * `useChatStore.getState()` / `useChatStore.setState()`.
- *
- * No React rendering is needed — zustand stores are plain vanilla JS objects.
- */
-
-// Reset the store to initial state before each test
 let useChatStore: typeof import('./chat-store').useChatStore;
 
 beforeEach(async () => {
   vi.resetModules();
   ({ useChatStore } = await import('./chat-store'));
-  // Reset to initial state
   useChatStore.setState({
     activeThreadId: null,
     pendingMessage: null,
@@ -42,16 +33,16 @@ describe('useChatStore', () => {
       expect(useChatStore.getState().streamingContent).toBe('');
     });
 
-    it('does NOT clear streaming content when actively streaming', () => {
+    it('clears streaming content when changing to a different thread while streaming (F10 fix)', () => {
       useChatStore.setState({ streamingContent: 'partial', streamingStatus: 'streaming' });
       useChatStore.getState().setActiveThread(2);
-      expect(useChatStore.getState().streamingContent).toBe('partial');
+      expect(useChatStore.getState().streamingContent).toBe('');
     });
 
-    it('does NOT clear streaming content when in saving state', () => {
+    it('clears streaming content when changing to a different thread in saving state (F10 fix)', () => {
       useChatStore.setState({ streamingContent: 'done text', streamingStatus: 'saving' });
       useChatStore.getState().setActiveThread(3);
-      expect(useChatStore.getState().streamingContent).toBe('done text');
+      expect(useChatStore.getState().streamingContent).toBe('');
     });
   });
 
@@ -111,6 +102,37 @@ describe('useChatStore', () => {
       useChatStore.getState().appendToolInput('t1', '"hello"}');
       const evt = useChatStore.getState().streamingToolEvents[0];
       expect(evt.input.input).toBe('{"q":"hello"}');
+    });
+
+    it('handles appendToolInput for unknown event ID gracefully', () => {
+      expect(() => useChatStore.getState().appendToolInput('no-such-id', 'abc')).not.toThrow();
+    });
+  });
+
+  describe('updateToolEventThinking()', () => {
+    it('appends thought text to the matching event', () => {
+      useChatStore
+        .getState()
+        .addToolEvent({ id: 'think1', name: 'think', input: {}, status: 'pending' });
+      useChatStore.getState().updateToolEventThinking('think1', 'Thinking...');
+      useChatStore.getState().updateToolEventThinking('think1', ' More thoughts');
+      const evt = useChatStore.getState().streamingToolEvents[0];
+      expect(evt.input.thought).toBe('Thinking... More thoughts');
+    });
+
+    it('initialises thought from empty string when input.thought is missing', () => {
+      useChatStore
+        .getState()
+        .addToolEvent({ id: 'e1', name: 'tool', input: {}, status: 'pending' });
+      useChatStore.getState().updateToolEventThinking('e1', 'first thought');
+      expect(useChatStore.getState().streamingToolEvents[0].input.thought).toBe('first thought');
+    });
+
+    it('ignores unknown event IDs without throwing', () => {
+      expect(() =>
+        useChatStore.getState().updateToolEventThinking('no-such-id', 'thought'),
+      ).not.toThrow();
+      expect(useChatStore.getState().streamingToolEvents).toHaveLength(0);
     });
   });
 
@@ -218,6 +240,43 @@ describe('useChatStore', () => {
     it('stores the session ID', () => {
       useChatStore.getState().setStreamingSessionId('sess-123');
       expect(useChatStore.getState().streamingSessionId).toBe('sess-123');
+    });
+
+    it('clears the session ID when null is passed', () => {
+      useChatStore.getState().setStreamingSessionId('sess-abc');
+      useChatStore.getState().setStreamingSessionId(null);
+      expect(useChatStore.getState().streamingSessionId).toBeNull();
+    });
+  });
+
+  describe('abortStream()', () => {
+    it('calls abort() on the AbortController', () => {
+      const ac = new AbortController();
+      const spy = vi.spyOn(ac, 'abort');
+      useChatStore.setState({ abortController: ac as unknown as null });
+      useChatStore.getState().abortStream();
+      expect(spy).toHaveBeenCalledOnce();
+    });
+
+    it('resets streamingStatus to idle and clears streamingContent', () => {
+      const ac = new AbortController();
+      useChatStore.setState({
+        abortController: ac as unknown as null,
+        streamingContent: 'partial',
+        streamingStatus: 'streaming',
+      });
+      useChatStore.getState().abortStream();
+      const s = useChatStore.getState();
+      expect(s.streamingStatus).toBe('idle');
+      expect(s.streamingContent).toBe('');
+      expect(s.abortController).toBeNull();
+    });
+
+    it('handles missing abortController gracefully (no-op abort, still resets state)', () => {
+      useChatStore.setState({ abortController: null, streamingContent: 'partial' });
+      expect(() => useChatStore.getState().abortStream()).not.toThrow();
+      expect(useChatStore.getState().streamingStatus).toBe('idle');
+      expect(useChatStore.getState().streamingContent).toBe('');
     });
   });
 });

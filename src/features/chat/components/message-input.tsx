@@ -15,7 +15,8 @@ import { filesApi } from '@/features/files/api/files-api';
 import { THREADS_QUERY_KEY } from '@/features/threads/hooks/use-threads';
 
 const ACCEPTED = '.pdf,.txt,.md,.docx,.doc,.csv,.json,.xml,.html,.htm';
-const MAX_SIZE_MB = 25;
+const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(','));
+const MAX_SIZE_MB = 10;
 const MAX_TEXTAREA_ROWS = 8;
 const LINE_HEIGHT_PX = 24;
 
@@ -81,6 +82,9 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     abortStream,
     setPendingMessage,
     setFileAttachments,
+    setStreamError,
+    finalizeStream,
+    clearOptimisticMessages,
   } = useChatStore();
   const { webSearchEnabled, toggleWebSearch } = useUiStore();
   const { send } = useStream();
@@ -142,6 +146,20 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
 
       if (filesToSend.length > 0) {
         for (const file of filesToSend) {
+          if (file.size > MAX_SIZE_MB * 1024 * 1024) {
+            setStreamError(
+              `File "${file.name}" exceeds the ${MAX_SIZE_MB} MB upload limit. Please choose a smaller file.`,
+            );
+            finalizeStream();
+            clearOptimisticMessages();
+            setPendingFiles(filesToSend);
+            if (el) {
+              el.value = value;
+              handleInput();
+            }
+            setIsCreating(false);
+            return;
+          }
           try {
             const result = await filesApi.upload(newThread.id, file);
             uploadedFileIds.push(result.id);
@@ -153,8 +171,18 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
             });
           } catch (err) {
             console.warn('[upload] Failed to upload file', file.name, err);
-            // still store meta so optimistic display works
-            attachmentsMeta.push({ name: file.name, sizeBytes: file.size, mimeType: file.type });
+            setStreamError(
+              'File upload failed. Please ensure the file is under 10 MB and try again.',
+            );
+            finalizeStream();
+            clearOptimisticMessages();
+            setPendingFiles(filesToSend);
+            if (el) {
+              el.value = value;
+              handleInput();
+            }
+            setIsCreating(false);
+            return;
           }
         }
         void qc.invalidateQueries({ queryKey: ['files', newThread.id] });
@@ -193,6 +221,9 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     qc,
     setPendingMessage,
     handleInput,
+    setStreamError,
+    finalizeStream,
+    clearOptimisticMessages,
   ]);
 
   const handleKeyDown = useCallback(
@@ -238,6 +269,22 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     const valid = files.filter((f) => {
+      // Extension validation — reject unsupported types with a clear message
+      const ext = '.' + (f.name.split('.').pop() ?? '').toLowerCase();
+      if (!ACCEPTED_EXTENSIONS.has(ext)) {
+        // Distinguish images (no vision model) from other unsupported types
+        const isImage = f.type.startsWith('image/');
+        if (isImage) {
+          alert(
+            `"${f.name}" is an image file. Image uploads are not supported — no vision model is configured.\n\nSupported formats: ${ACCEPTED}`,
+          );
+        } else {
+          alert(
+            `"${f.name}" has an unsupported file type (${ext || 'unknown'}).\n\nSupported formats: ${ACCEPTED}`,
+          );
+        }
+        return false;
+      }
       if (f.size > MAX_SIZE_MB * 1024 * 1024) {
         alert(`"${f.name}" exceeds ${MAX_SIZE_MB} MB limit.`);
         return false;

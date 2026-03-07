@@ -16,7 +16,6 @@ describe('useDebounce()', () => {
       initialProps: { val: 'first' },
     });
     rerender({ val: 'second' });
-    // Only 100 ms have elapsed — should still be 'first'
     act(() => {
       vi.advanceTimersByTime(100);
     });
@@ -46,13 +45,11 @@ describe('useDebounce()', () => {
     act(() => {
       vi.advanceTimersByTime(200);
     });
-    // Total: 400 ms but last update was only 200 ms ago → still 'a'
     expect(result.current).toBe('a');
 
     act(() => {
       vi.advanceTimersByTime(100);
     });
-    // 300 ms since last update → resolves to 'c'
     expect(result.current).toBe('c');
   });
 });

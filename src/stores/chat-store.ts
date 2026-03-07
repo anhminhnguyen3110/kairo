@@ -21,7 +21,6 @@ interface ChatState {
   abortController: AbortController | null;
   streamingSessionId: string | null;
 
-  /** artifact IDs (temp UUID) emitted via SSE `artifact` event during the live stream */
   streamingArtifactIds: string[];
 
   optimisticMessages: Message[];
@@ -66,21 +65,39 @@ export const useChatStore = create<ChatState>()(
         state.pendingMessage = msg as unknown as PendingMessage;
       }),
 
-    setActiveThread: (id) =>
+    setActiveThread: (id) => {
+      const { streamingStatus, abortController, activeThreadId } = get();
+      const isChangingThread = id !== activeThreadId;
+
+      const isNewChatToThread = activeThreadId === null && id !== null;
+      if (
+        isChangingThread &&
+        !isNewChatToThread &&
+        (streamingStatus === 'streaming' || streamingStatus === 'saving')
+      ) {
+        (abortController as unknown as AbortController | null)?.abort();
+      }
+
       set((state) => {
         state.activeThreadId = id;
 
-        // Don't wipe streaming state mid-stream: when creating a new thread,
-        // router.push() causes ThreadContainer to mount and call setActiveThread
-        // before the SSE stream finishes. Clearing here would make the streaming
-        // bubble disappear and lose all tokens already received.
-        if (state.streamingStatus !== 'streaming' && state.streamingStatus !== 'saving') {
+        if (isChangingThread) {
+          state.streamingStatus = 'idle';
+          state.streamingError = null;
+          state.streamingContent = '';
+          state.streamingToolEvents = [];
+          state.streamingArtifactIds = [];
+          state.abortController = null;
+          state.streamingSessionId = null;
+          state.optimisticMessages = [];
+        } else if (state.streamingStatus !== 'streaming' && state.streamingStatus !== 'saving') {
           state.streamingStatus = 'idle';
           state.streamingContent = '';
           state.streamingToolEvents = [];
           state.optimisticMessages = [];
         }
-      }),
+      });
+    },
 
     startStream: (abortController) =>
       set((state) => {

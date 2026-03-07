@@ -59,6 +59,16 @@ async function forwardToBe(
   request: NextRequest | Request,
   beUrl: string,
   accessToken: string,
+  /** Pre-buffered body text. When provided, used instead of request.body so the
+   *  same payload can be re-sent on a 401 refresh-retry without draining the
+   *  original ReadableStream twice. */
+  bufferedBody?: string | null,
+  /** AbortSignal propagated from the incoming request. When the browser
+   *  disconnects, this signal fires, which aborts the BFF→BE fetch and closes
+   *  the NestJS TCP connection so req.on('close') fires and SSE slots are
+   *  released. NOT passed on 401-retry calls to avoid aborting a healthy
+   *  re-connection. */
+  signal?: AbortSignal | null,
 ): Promise<Response> {
   const contentType = request.headers.get('content-type') ?? '';
   const isMultipart = contentType.includes('multipart/form-data');
@@ -79,10 +89,19 @@ async function forwardToBe(
   };
 
   if (!['GET', 'HEAD'].includes(request.method)) {
-    init.body = isMultipart ? await request.formData() : request.body;
-
-    (init as RequestInit & { duplex?: string }).duplex = 'half';
+    if (isMultipart) {
+      init.body = await request.formData();
+    } else if (bufferedBody !== undefined && bufferedBody !== null) {
+      // Use pre-buffered string — safe to re-use for retries.
+      init.body = bufferedBody;
+    } else {
+      // Streaming body (only used on the very first attempt, not retries).
+      init.body = request.body;
+      (init as RequestInit & { duplex?: string }).duplex = 'half';
+    }
   }
+
+  if (signal) init.signal = signal;
 
   return fetch(beUrl, init as RequestInit);
 }
@@ -108,10 +127,30 @@ async function handleRequest(
     accessToken = refreshed;
   }
 
+  // For non-GET/HEAD requests with a non-multipart body, buffer the body text
+  // so it can be safely re-sent on a 401 refresh-retry.
+  // (Streaming ReadableStream bodies can only be consumed once; a pre-read
+  // string can be passed to both the first attempt and any retry.)
+  const contentType = request.headers.get('content-type') ?? '';
+  const isMultipart = contentType.includes('multipart/form-data');
+  const needsBodyBuffer =
+    !['GET', 'HEAD'].includes(request.method) && !isMultipart && request.body !== null;
+  const bufferedBody = needsBodyBuffer ? await request.text() : null;
+
+  // Pass request.signal so that if the browser disconnects while the SSE
+  // stream is open, the BFF→BE fetch is also aborted, closing the NestJS
+  // connection and allowing releaseSseSlot() to run in the finally block.
+  const requestSignal = request.signal ?? null;
+
   let beResponse: Response;
   try {
-    beResponse = await forwardToBe(request, beUrl, accessToken);
-  } catch {
+    beResponse = await forwardToBe(request, beUrl, accessToken, bufferedBody, requestSignal);
+  } catch (err) {
+    // If the client aborted (browser disconnect), propagate as-is — no need
+    // to return a 503 since the client is already gone.
+    if (err instanceof Error && err.name === 'AbortError') {
+      throw err;
+    }
     return NextResponse.json(
       { message: 'Service is temporarily unavailable. Please try again later.' },
       { status: 503 },
@@ -126,7 +165,11 @@ async function handleRequest(
     accessToken = newToken;
 
     try {
-      beResponse = await forwardToBe(request.clone(), beUrl, accessToken);
+      // Pass the same bufferedBody so the retry doesn't attempt to re-read
+      // an already-consumed ReadableStream.
+      // Note: do NOT pass requestSignal on retry — a new healthy connection
+      // should not be pre-aborted by a stale signal.
+      beResponse = await forwardToBe(request, beUrl, accessToken, bufferedBody);
     } catch {
       return NextResponse.json(
         { message: 'Service is temporarily unavailable. Please try again later.' },
@@ -138,11 +181,6 @@ async function handleRequest(
   const isSSE = beResponse.headers.get('content-type')?.includes('text/event-stream') ?? false;
 
   if (isSSE && beResponse.body) {
-    // Always use 200 for SSE responses regardless of the upstream status code.
-    // The upstream may return 201 (new thread created) or 202 (existing thread),
-    // but streaming a non-200 body through Next.js Route Handlers causes the
-    // connection to be closed prematurely (ERR_INCOMPLETE_CHUNKED_ENCODING).
-    // Thread creation is communicated via SSE `meta` / `message_start` events.
     return new Response(beResponse.body, {
       status: 200,
       headers: {

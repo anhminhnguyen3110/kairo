@@ -8,7 +8,6 @@ export const filesApi = {
     form.append('threadId', String(threadId));
     const res = await uploadFile(form);
     const json = (await res.json()) as { data: FileAttachment } | FileAttachment;
-    // Unwrap NestJS envelope `{ data: ..., meta: ... }` if present
     return 'data' in json && typeof (json as { data: FileAttachment }).data === 'object'
       ? (json as { data: FileAttachment }).data
       : (json as FileAttachment);

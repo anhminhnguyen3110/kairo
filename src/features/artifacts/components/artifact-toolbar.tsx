@@ -112,7 +112,6 @@ export function ArtifactToolbar({
         </>
       )}
 
-      {/* Title + type */}
       <span className="flex-1 text-sm font-medium text-stone-300 truncate min-w-0">
         {artifact.title ?? 'Artifact'}
       </span>
@@ -142,7 +141,6 @@ export function ArtifactToolbar({
           <ChevronDown size={12} />
         </button>
 
-        {/* Dropdown menu */}
         {copyMenuOpen && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setCopyMenuOpen(false)} />
@@ -181,7 +179,6 @@ export function ArtifactToolbar({
         )}
       </div>
 
-      {/* Refresh */}
       {onRefresh && (
         <button
           type="button"
@@ -193,7 +190,6 @@ export function ArtifactToolbar({
         </button>
       )}
 
-      {/* Close */}
       <button
         type="button"
         onClick={closePanel}

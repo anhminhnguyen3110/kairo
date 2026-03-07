@@ -1,9 +1,9 @@
-﻿# Kairo  Frontend
+﻿# Kairo Frontend
 
 Next.js 16 chat interface for the Kairo AI agent platform. Real-time SSE token streaming, side-by-side artifact panel, tool call cards, file uploads, thread management, model selector with 183+ models, and persistent agent memory.
 
-**Stack:** Next.js 16  React 19  TanStack Query 5  Zustand 5  Tailwind CSS 4  
-**Tests:** 129 passing across 12 spec files (Vitest + Testing Library)
+**Stack:** Next.js 16 React 19 TanStack Query 5 Zustand 5 Tailwind CSS 4  
+**Tests:** 148 passing across 12 spec files (Vitest + Testing Library)
 
 ---
 
@@ -67,26 +67,26 @@ docker run -p 3000:3000 \
 
 ### Chat & Streaming
 
-- **SSE token streaming**  `POST /api/proxy/chat/send` with `stream: true`. Tokens render word-by-word in the assistant bubble as they arrive from the LLM. No polling, no WebSocket  HTTP/1.1 native.
-- **Auto-scroll**  chat viewport follows the stream; a floating action button appears when the user scrolls up so they can jump back to the bottom instantly.
-- **Streaming session ID**  each SSE stream is tagged with a `sessionId`. The abort button sends `POST /chat/abort` with the same ID, allowing mid-stream cancellation.
-- **Optimistic messages**  the user's message appears instantly in the UI before the server confirms receipt, making the interface feel synchronous.
-- **New thread auto-creation**  sending from the empty state creates a thread on the server and navigates to `/threads/:id` only after the stream's `[DONE]` event, avoiding a mid-stream navigation flash.
+- **SSE token streaming** `POST /api/proxy/chat/send` with `stream: true`. Tokens render word-by-word in the assistant bubble as they arrive from the LLM. No polling, no WebSocket HTTP/1.1 native.
+- **Auto-scroll** chat viewport follows the stream; a floating action button appears when the user scrolls up so they can jump back to the bottom instantly.
+- **Streaming session ID** each SSE stream is tagged with a `sessionId`. The abort button sends `POST /chat/abort` with the same ID, allowing mid-stream cancellation.
+- **Optimistic messages** the user's message appears instantly in the UI before the server confirms receipt, making the interface feel synchronous.
+- **New thread auto-creation** sending from the empty state creates a thread on the server and navigates to `/threads/:id` only after the stream's `[DONE]` event, avoiding a mid-stream navigation flash.
 
 ### Tool Cards
 
 Every agent tool call is rendered as an expandable inline card:
 
-| Tool card | Shows |
-|---|---|
-| `think` | Internal reasoning in a collapsed scratchpad |
-| `web_search` | Query + search result snippets |
-| `write_file` | Path + content written to workspace |
-| `read_file` | Path + content read from workspace |
-| `edit_file` | Path + diff-style line edits |
-| `search_files` | Pattern + matching lines |
-| `extract_document` | File name + extracted text preview |
-| `create_artifact` | Artifact type + title (link to panel) |
+| Tool card          | Shows                                        |
+| ------------------ | -------------------------------------------- |
+| `think`            | Internal reasoning in a collapsed scratchpad |
+| `web_search`       | Query + search result snippets               |
+| `write_file`       | Path + content written to workspace          |
+| `read_file`        | Path + content read from workspace           |
+| `edit_file`        | Path + diff-style line edits                 |
+| `search_files`     | Pattern + matching lines                     |
+| `extract_document` | File name + extracted text preview           |
+| `create_artifact`  | Artifact type + title (link to panel)        |
 
 Cards start in loading state on `tool_start` and resolve on `tool_end`. Collapsed by default; click to expand.
 
@@ -94,21 +94,21 @@ Cards start in loading state on `tool_start` and resolve on `tool_end`. Collapse
 
 A side-by-side panel opens when the agent generates an artifact:
 
-| Artifact type | Who produces it | Renderer |
-|---|---|---|
-| `html` | Agent (`create_artifact`) | Sandboxed `<iframe srcDoc>` — full HTML/CSS/JS execution |
-| `code` | Agent (`create_artifact`) | Syntax-highlighted code block with language label |
-| `markdown` | Agent (`create_artifact`) | react-markdown with rehype syntax highlight |
-| `react` | Agent (via `code` + language hint) | Sandpack live editor (CodeSandbox in-browser) |
-| `mermaid` | FE renderer auto-detection | Mermaid.js SVG diagram renderer |
-| `svg` | FE renderer auto-detection | Inline SVG rendering |
+| Artifact type | Who produces it                    | Renderer                                                 |
+| ------------- | ---------------------------------- | -------------------------------------------------------- |
+| `html`        | Agent (`create_artifact`)          | Sandboxed `<iframe srcDoc>` — full HTML/CSS/JS execution |
+| `code`        | Agent (`create_artifact`)          | Syntax-highlighted code block with language label        |
+| `markdown`    | Agent (`create_artifact`)          | react-markdown with rehype syntax highlight              |
+| `react`       | Agent (via `code` + language hint) | Sandpack live editor (CodeSandbox in-browser)            |
+| `mermaid`     | FE renderer auto-detection         | Mermaid.js SVG diagram renderer                          |
+| `svg`         | FE renderer auto-detection         | Inline SVG rendering                                     |
 
 The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editing the artifact in a follow-up message creates a new version linked to the original via `parentId`.
 
 ### File Upload
 
 - Attach button reveals **Upload file** or **Toggle web search** options.
-- Files attach as chips in the input bar, each with an  remove button.
+- Files attach as chips in the input bar, each with an remove button.
 - On send, files are uploaded to the backend before the SSE stream starts so the `fileId` is available to the agent's `extract_document` tool.
 - Supported types: PDF, TXT, Markdown, CSV (up to 10 MB).
 - Uploaded files persist in the thread and are listed in a collapsible files panel.
@@ -127,7 +127,7 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 - `Ctrl+K` (or `Cmd+K` on Mac) opens a Radix Dialog search modal.
 - Input is debounced 300 ms, calls `GET /threads?search=<query>`.
-- Results are highlighted and clickable  navigates to `/threads/:id`.
+- Results are highlighted and clickable navigates to `/threads/:id`.
 
 ### Model Selector
 
@@ -140,7 +140,7 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 ### Authentication
 
 - Register and login forms with Zod validation and react-hook-form.
-- JWT stored in **httpOnly cookies** managed by the Next.js BFF  never accessible to JavaScript.
+- JWT stored in **httpOnly cookies** managed by the Next.js BFF never accessible to JavaScript.
 - Access token (15 min) is automatically refreshed by the BFF proxy when it detects a 401, using the refresh token cookie.
 - Protected routes redirect to `/login` via Next.js middleware (`proxy.ts`). Already-authenticated users visiting `/login` are redirected to `/threads`.
 
@@ -162,11 +162,11 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ### UX Details
 
-- **Copy button** on every message bubble  copies to clipboard with a 2-second success tick animation.
-- **Markdown rendering**  full GFM (tables, task lists, code fences with syntax highlighting, blockquotes).
-- **Dark mode**  follows system preference (`prefers-color-scheme`). Toggle available in sidebar footer.
-- **Scroll-to-bottom FAB**  appears when the user scrolls more than 200 px from the latest message.
-- **Disabled input during streaming**  send button becomes a Stop button. Input field is disabled until the stream completes.
+- **Copy button** on every message bubble copies to clipboard with a 2-second success tick animation.
+- **Markdown rendering** full GFM (tables, task lists, code fences with syntax highlighting, blockquotes).
+- **Dark mode** follows system preference (`prefers-color-scheme`). Toggle available in sidebar footer.
+- **Scroll-to-bottom FAB** appears when the user scrolls more than 200 px from the latest message.
+- **Disabled input during streaming** send button becomes a Stop button. Input field is disabled until the stream completes.
 
 ---
 
@@ -387,7 +387,7 @@ pnpm start
 
 ### Full stack (recommended)
 
-Run from the **repo root**  starts PostgreSQL, Redis, backend, and frontend together:
+Run from the **repo root** starts PostgreSQL, Redis, backend, and frontend together:
 
 ```bash
 # 1. Prepare backend env
@@ -413,7 +413,7 @@ docker run -p 3000:3000 \
   kairo-fe
 ```
 
-The FE image uses Next.js `output: 'standalone'`  the runner stage is ~120 MB (vs ~1 GB for a full install image).
+The FE image uses Next.js `output: 'standalone'` the runner stage is ~120 MB (vs ~1 GB for a full install image).
 
 ---
 
@@ -422,11 +422,11 @@ The FE image uses Next.js `output: 'standalone'`  the runner stage is ~120 MB (v
 The frontend uses **no client-side secrets**. All backend communication goes through the Next.js BFF proxy route (`/api/proxy/[...path]`), which injects the `Authorization` header server-side.
 
 ```env
-#  Server-side only (BFF) 
+#  Server-side only (BFF)
 API_INTERNAL_URL=http://localhost:3001   # backend URL reachable from Next.js server
                                         # In Docker: http://app:3001 (service name)
 
-#  Build-time / public 
+#  Build-time / public
 NEXT_PUBLIC_SITE_URL=http://localhost:3000  # used for SSR absolute URL construction
 ```
 
@@ -450,6 +450,7 @@ Browser fetch('/api/proxy/threads')
 ```
 
 This means:
+
 - Zero CORS issues (same-origin requests from browser to Next.js)
 - JWT never accessible to JavaScript (XSS-safe)
 - Token refresh is transparent (user never sees a 401 error)
@@ -469,21 +470,21 @@ POST /api/proxy/chat/send { message, stream: true }
 
 SSE event types handled:
 
-| Event | Action |
-|---|---|
-| `ping` | Ignored (Redis Stream seed event) |
-| `meta` | Set `confirmedThreadId`; if `title` present → `setQueriesData` patches thread cache in-memory (zero network cost) |
-| `content_block_start` | Add tool card or think card |
-| `content_block_delta` | Append token / thinking delta / tool input JSON |
-| `content_block_stop` | Resolve tool card with output |
-| `streaming_complete` | LLM done, DB write in progress → `setSavingStatus()` unlocks input, shows "Saving…" indicator |
-| `message_stop` | Navigate new thread; `invalidateQueries(messages).then(finalizeStream)` swaps bubble; refresh sidebar |
-| `token` | Append token to streaming bubble |
-| `tool_start` / `tool_end` | Legacy tool card lifecycle |
-| `artifact` | Open artifact panel |
-| `error` | Set stream error state |
-| `[DONE]` | No-op safety fence (all finalization moved to `message_stop`) |
-| `done` | Dead path — `toKairoEvents` consumes this internally; kept as no-op |
+| Event                     | Action                                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `ping`                    | Ignored (Redis Stream seed event)                                                                                 |
+| `meta`                    | Set `confirmedThreadId`; if `title` present → `setQueriesData` patches thread cache in-memory (zero network cost) |
+| `content_block_start`     | Add tool card or think card                                                                                       |
+| `content_block_delta`     | Append token / thinking delta / tool input JSON                                                                   |
+| `content_block_stop`      | Resolve tool card with output                                                                                     |
+| `streaming_complete`      | LLM done, DB write in progress → `setSavingStatus()` unlocks input, shows "Saving…" indicator                     |
+| `message_stop`            | Navigate new thread; `invalidateQueries(messages).then(finalizeStream)` swaps bubble; refresh sidebar             |
+| `token`                   | Append token to streaming bubble                                                                                  |
+| `tool_start` / `tool_end` | Legacy tool card lifecycle                                                                                        |
+| `artifact`                | Open artifact panel                                                                                               |
+| `error`                   | Set stream error state                                                                                            |
+| `[DONE]`                  | No-op safety fence (all finalization moved to `message_stop`)                                                     |
+| `done`                    | Dead path — `toKairoEvents` consumes this internally; kept as no-op                                               |
 
 #### Streaming status transitions
 
@@ -497,12 +498,12 @@ idle → streaming (startStream)
 
 ### State Management
 
-| Store | Responsibility |
-|---|---|
-| `chat-store.ts` | Streaming state (`idle`/`streaming`/`saving`/`error`), optimistic messages, tool events, artifacts-in-progress |
-| `model-store.ts` | Selected LLM provider + model, persisted to `localStorage` |
-| `ui-store.ts` | Sidebar collapsed, artifact panel open, web search toggle |
-| `artifact-store.ts` | Completed artifacts list, active artifact ID |
+| Store               | Responsibility                                                                                                 |
+| ------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `chat-store.ts`     | Streaming state (`idle`/`streaming`/`saving`/`error`), optimistic messages, tool events, artifacts-in-progress |
+| `model-store.ts`    | Selected LLM provider + model, persisted to `localStorage`                                                     |
+| `ui-store.ts`       | Sidebar collapsed, artifact panel open, web search toggle                                                      |
+| `artifact-store.ts` | Completed artifacts list, active artifact ID                                                                   |
 
 TanStack Query manages all server state (threads list, messages, files). Zustand manages client-only UI state.
 
@@ -517,19 +518,21 @@ pnpm test:cov        # coverage report
 pnpm test:ui         # Vitest browser UI
 ```
 
-| Test file | What it covers |
-|---|---|
-| `ui-store.spec.ts` | All 9 Zustand store actions (sidebar, scroll, web search) |
-| `api-client.spec.ts` | GET/POST/PATCH/DELETE, 204 empty response, envelope unwrap |
-| `login-schema.spec.ts` | Zod login schema  valid/invalid email, password rules |
-| `register-schema.spec.ts` | Zod register + password confirm mismatch |
-| `message-list.spec.tsx` | Message rendering, role differentiation, markdown |
-| `copy-button.spec.tsx` | Clipboard API mock, success state animation |
-| `artifact-panel.spec.tsx` | Panel open/close, type switching (html/mermaid/code) |
-| `thread-list.spec.tsx` | Time-group sorting (Today/Yesterday/Older) |
-| `model-store.spec.ts` | Model selection, provider change, localStorage persistence |
-| `chat-input.spec.tsx` | Submit on Enter, Shift+Enter newline, file chip remove |
-| **Total** | **129 tests across 12 files** |
+| Test file                              | What it covers                                                |
+| -------------------------------------- | ------------------------------------------------------------- |
+| `ui-store.spec.ts`                     | All 9 Zustand store actions (sidebar, scroll, web search)     |
+| `api-client.spec.ts`                   | GET/POST/PATCH/DELETE, 204 empty response, SSE stream, upload |
+| `login-schema.spec.ts`                 | Zod login schema — valid/invalid email, password rules        |
+| `register-schema.spec.ts`              | Zod register + password confirm mismatch                      |
+| `copy-button.spec.tsx`                 | Clipboard API mock, success state animation                   |
+| `model-store.spec.ts`                  | Model selection, provider change, localStorage persistence    |
+| `chat-store.spec.ts`                   | Streaming state, tool events, abort, optimistic messages      |
+| `artifact-store.spec.ts`               | Artifact CRUD, active artifact selection                      |
+| `utils.spec.ts`                        | Utility function edge cases                                   |
+| `use-debounce.spec.ts`                 | Debounce hook timing                                          |
+| `use-click-outside.spec.ts`            | Click-outside hook ref detection                              |
+| `features/artifacts/constants.spec.ts` | Artifact type → renderer mapping                              |
+| **Total**                              | **148 tests across 12 files**                                 |
 
 ---
 
@@ -593,13 +596,13 @@ fe/
 
 ## Key Routes
 
-| Route | Description |
-|---|---|
-| `/login` | Login form. Redirects to `/threads` if already authenticated. |
-| `/register` | Registration form. |
-| `/threads` | Thread list (redirects to welcome screen if no threads). |
-| `/threads/:id` | Active thread  messages, streaming, artifact panel. |
-| `/api/proxy/[...path]` | BFF proxy route  injects JWT, handles refresh. |
-| `/api/auth/login` | Sets httpOnly cookies on successful login. |
-| `/api/auth/refresh` | Refreshes access token using refresh cookie. |
-| `/api/auth/logout` | Clears cookies. |
+| Route                  | Description                                                   |
+| ---------------------- | ------------------------------------------------------------- |
+| `/login`               | Login form. Redirects to `/threads` if already authenticated. |
+| `/register`            | Registration form.                                            |
+| `/threads`             | Thread list (redirects to welcome screen if no threads).      |
+| `/threads/:id`         | Active thread messages, streaming, artifact panel.            |
+| `/api/proxy/[...path]` | BFF proxy route injects JWT, handles refresh.                 |
+| `/api/auth/login`      | Sets httpOnly cookies on successful login.                    |
+| `/api/auth/refresh`    | Refreshes access token using refresh cookie.                  |
+| `/api/auth/logout`     | Clears cookies.                                               |

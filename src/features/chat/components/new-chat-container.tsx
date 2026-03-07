@@ -27,14 +27,10 @@ export function NewChatContainer() {
   const displayName = !meLoading && me?.email ? displayNameFromEmail(me.email) : null;
   const { toggleSidebar } = useUiStore();
 
-  // Close artifact panel when entering the new-chat (no-thread) state.
   useEffect(() => {
     clearArtifacts();
   }, [clearArtifacts]);
 
-  // Clear optimistic messages on unmount (fires when Next.js finishes navigating
-  // to /threads/:id). Deferring to unmount prevents the welcome-screen flash
-  // that occurs when clearing synchronously before the route transition completes.
   useEffect(() => {
     return () => {
       clearOptimisticMessages();
@@ -77,7 +73,6 @@ export function NewChatContainer() {
         </>
       ) : (
         <div className="flex-1 flex flex-col items-center justify-center px-4 gap-0">
-          {}
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-8">
             <KairoLogo size={52} />
             <h1 className="text-[1.5rem] sm:text-[2rem] font-semibold text-[#ECECEC] tracking-tight text-center sm:text-left">
@@ -85,10 +80,8 @@ export function NewChatContainer() {
             </h1>
           </div>
 
-          {}
           <MessageInput onNewThread={handleNewThread} variant="centered" />
 
-          {}
           <div className="flex items-center gap-2 mt-4 flex-wrap justify-center">
             {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
               <SuggestionPill
@@ -113,10 +106,28 @@ interface SuggestionPillProps {
   onNewThread: (id: number) => void;
 }
 
-function SuggestionPill({ icon, label }: SuggestionPillProps) {
+function SuggestionPill({ icon, label, prompt }: SuggestionPillProps) {
+  const handleClick = () => {
+    // Inject the starter prompt into the MessageInput textarea
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea');
+    if (textarea) {
+      // Use the native input setter so React state (onInput) picks up the change
+      const nativeSetter = Object.getOwnPropertyDescriptor(
+        window.HTMLTextAreaElement.prototype,
+        'value',
+      )?.set;
+      nativeSetter?.call(textarea, prompt);
+      textarea.dispatchEvent(new Event('input', { bubbles: true }));
+      textarea.focus();
+      // Move cursor to end
+      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+    }
+  };
+
   return (
     <button
       type="button"
+      onClick={handleClick}
       className="
         flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px]
         bg-[#2A2724] border border-[#3A3632] text-stone-300

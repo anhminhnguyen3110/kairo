@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MoreHorizontal, Pencil, Trash2, Copy, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,7 @@ interface SidebarItemProps {
 
 export function SidebarItem({ thread }: SidebarItemProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isActive = pathname === `/threads/${thread.id}`;
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -174,6 +175,7 @@ export function SidebarItem({ thread }: SidebarItemProps) {
           <div className="my-1 mx-2 border-t border-[#3A3632]" />
           <button
             onClick={() => {
+              if (isActive) router.push('/threads');
               deleteThread(thread.id);
               setMenuOpen(false);
             }}

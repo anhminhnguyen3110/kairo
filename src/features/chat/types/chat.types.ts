@@ -1,7 +1,5 @@
 import type { AttachmentMeta, LlmProvider } from '@/types';
 
-// ─── Streaming ────────────────────────────────────────────────────────────────
-
 export type StreamingStatus = 'idle' | 'streaming' | 'saving' | 'error';
 
 export interface StreamingToolEvent {
@@ -18,15 +16,11 @@ export interface PendingMessage {
   fileIds?: number[];
 }
 
-// ─── Send / API ───────────────────────────────────────────────────────────────
-
-/** Options accepted by useStream().send() */
 export interface SendOptions {
   threadId?: number;
   message: string;
   onNewThread?: (threadId: number) => void;
   files?: File[];
-  /** Pre-uploaded file IDs (takes precedence over `files` when provided) */
   fileIds?: number[];
 }
 
@@ -35,8 +29,6 @@ export interface SendMessagePayload {
   message: string;
   stream?: boolean;
 }
-
-// ─── Models ───────────────────────────────────────────────────────────────────
 
 export interface ModelInfo {
   id: string;
@@ -56,9 +48,6 @@ export interface ModelSelection {
   providerLabel: string;
 }
 
-// ─── Tool Events ─────────────────────────────────────────────────────────────
-
-/** Shape of a single search result from the Tavily web-search tool. */
 export interface TavilyResult {
   title?: string;
   url?: string;
@@ -66,7 +55,6 @@ export interface TavilyResult {
   score?: number;
 }
 
-/** Top-level response object from the Tavily web-search tool. */
 export interface TavilyResponse {
   query?: string;
   results?: TavilyResult[];

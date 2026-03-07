@@ -45,7 +45,6 @@ export function ArtifactChip({ artifactId, title, type }: ArtifactChipProps) {
         </div>
       </button>
 
-      {/* Download */}
       {downloadUrl ? (
         <a
           href={downloadUrl}

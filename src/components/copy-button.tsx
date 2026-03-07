@@ -27,7 +27,7 @@ export function CopyButton({ content, showLabel = true, className }: CopyButtonP
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // ignore clipboard errors in non-secure contexts
+      // clipboard write unavailable in non-secure contexts
     }
   }, [content]);
 

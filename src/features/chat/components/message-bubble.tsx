@@ -88,7 +88,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     return (
       <div className="group/msg flex justify-end">
         <div className="max-w-[85%] flex flex-col items-end gap-2">
-          {}
           {attachments.length > 0 && (
             <div className="flex gap-2 flex-wrap justify-end">
               {attachments.map((att, i) => (
@@ -96,7 +95,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               ))}
             </div>
           )}
-          {}
           {message.content && (
             <div
               className={cn(
@@ -131,7 +129,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
     return (
       <div className="group/msg">
-        {}
         {toolCallsList.map((tool, i) => (
           <ToolEventCard
             key={tool.id ?? `${tool.name}-${i}`}
@@ -142,7 +139,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           />
         ))}
 
-        {}
         {message.artifacts?.map((artifact) => (
           <ArtifactChip
             key={artifact.id}
@@ -152,7 +148,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           />
         ))}
 
-        {}
         <MarkdownRenderer content={message.content} />
         {message.content && (
           <div className="flex items-center gap-1 mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-150">

@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 /* ============================================================
    DESIGN TOKENS — Claude.ai exact palette
@@ -9,35 +9,38 @@
   --font-mono: var(--font-geist-mono), 'JetBrains Mono', monospace;
 
   /* Sidebar — warm near-black, matches Claude.ai */
-  --color-sidebar-bg:     #1C1B18;
-  --color-sidebar-hover:  #28261F;
-  --color-sidebar-active: #35322A;
-  --color-sidebar-text:   #D9D5CE;
-  --color-sidebar-muted:  #736B62;
-  --color-sidebar-border: #28261F;
+  --color-sidebar-bg: #1c1b18;
+  --color-sidebar-hover: #28261f;
+  --color-sidebar-active: #35322a;
+  --color-sidebar-text: #d9d5ce;
+  --color-sidebar-muted: #736b62;
+  --color-sidebar-border: #28261f;
 
   /* Chat surface — dark, matches Claude.ai dark mode */
-  --color-chat-bg:      #212121;
-  --color-chat-surface: #2A2A2A;
-  --color-chat-border:  #3A3A3A;
+  --color-chat-bg: #212121;
+  --color-chat-surface: #2a2a2a;
+  --color-chat-border: #3a3a3a;
 
   /* User message bubble */
-  --color-user-bubble: #2F2F2F;
-  --color-user-text:   #ECECEC;
+  --color-user-bubble: #2f2f2f;
+  --color-user-text: #ececec;
 
   /* Accent — Claude.ai terracotta/salmon (#CC785C is the brand asterisk color) */
-  --color-accent:       #CC785C;
-  --color-accent-hover: #B5614A;
+  --color-accent: #cc785c;
+  --color-accent-hover: #b5614a;
 }
 
 /* ============================================================
    BASE RESET
    ============================================================ */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -45,7 +48,7 @@ html, body {
 
 body {
   background-color: #212121;
-  color: #ECECEC;
+  color: #ececec;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -61,19 +64,19 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CCC8C1;
+  background: #ccc8c1;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #A8A29E;
+  background: #a8a29e;
 }
 
 /* Sidebar scrollbar → even more subtle */
 .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: #3C3836;
+  background: #3c3836;
 }
 .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-  background: #57534E;
+  background: #57534e;
 }
 
 /* ─── Thread title change animation ─────────────────────────────────────── */
@@ -94,7 +97,9 @@ body {
 
 /* Smooth sidebar transitions (2-way) */
 .sidebar-text-appear {
-  transition: opacity 0.15s ease-out, transform 0.15s ease-out;
+  transition:
+    opacity 0.15s ease-out,
+    transform 0.15s ease-out;
 }
 
 .sidebar-content-appear {

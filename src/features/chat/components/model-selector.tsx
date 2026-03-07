@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import { Cpu, ChevronLeft, Check, X, Loader2, Search } from 'lucide-react';
 import { useModels } from '../hooks/use-models';
 import { useModelStore } from '@/stores/model-store';
+import { useChatStore } from '@/stores/chat-store';
 import type { LlmProvider } from '@/types';
 import { cn } from '@/lib/utils';
 import { useClickOutside } from '@/lib/hooks/use-click-outside';
@@ -20,14 +21,26 @@ export function ModelSelector() {
 
   const { data: providers, isLoading } = useModels();
   const { selection, setSelection } = useModelStore();
+  const isStreaming = useChatStore((s) => s.streamingStatus === 'streaming');
 
   useClickOutside(
     containerRef,
     useCallback(() => setOpen(false), []),
   );
 
-  // Auto-select the default model (openai/gpt-oss-120b) on first load when
-  // the user has no stored preference yet.
+  // Close dropdown on Escape key
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+    return () => document.removeEventListener('keydown', onKeyDown, true);
+  }, [open]);
+
   useEffect(() => {
     if (selection !== null || !providers) return;
     const DEFAULT_PROVIDER = 'OPENAI_COMPATIBLE' as const;
@@ -92,13 +105,15 @@ export function ModelSelector() {
       {}
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => !isStreaming && setOpen((v) => !v)}
+        disabled={isStreaming}
         className={cn(
           'flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs',
           'text-stone-400 hover:text-stone-200 hover:bg-[#333333] transition-colors',
           open && 'text-stone-200 bg-[#333333]',
+          isStreaming && 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-stone-400',
         )}
-        title="Select model"
+        title={isStreaming ? 'Cannot change model while streaming' : 'Select model'}
       >
         {isLoading ? <Loader2 size={13} className="animate-spin" /> : <Cpu size={13} />}
         <span className="max-w-[160px] truncate">{label}</span>

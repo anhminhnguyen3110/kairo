@@ -1,16 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { ApiClientError, getBffBase, apiClient } from './api-client';
-
-// ─── getBffBase ───────────────────────────────────────────────────────────────
+import {
+  ApiClientError,
+  getBffBase,
+  apiClient,
+  createSseStream,
+  abortSseStream,
+  uploadFile,
+} from './api-client';
 
 describe('getBffBase()', () => {
   it('returns empty string in a browser (window is defined)', () => {
-    // jsdom sets window by default
     expect(getBffBase()).toBe('');
   });
 });
-
-// ─── ApiClientError ───────────────────────────────────────────────────────────
 
 describe('ApiClientError', () => {
   it('stores statusCode and message', () => {
@@ -24,8 +26,6 @@ describe('ApiClientError', () => {
     expect(new ApiClientError(500, 'oops')).toBeInstanceOf(Error);
   });
 });
-
-// ─── apiClient (fetchBff) ─────────────────────────────────────────────────────
 
 const makeFetchMock = (status: number, body?: unknown, headers?: Record<string, string>) => {
   return vi.fn().mockResolvedValue({
@@ -116,7 +116,6 @@ describe('apiClient', () => {
     it('redirects to /login?next=<path> on 401 proxy calls and still throws', async () => {
       globalThis.fetch = makeFetchMock(401, { message: 'Session expired' });
       const originalLocation = window.location;
-      // Replace window.location with a writable mock
       Object.defineProperty(window, 'location', {
         writable: true,
         value: { href: 'http://localhost/', pathname: '/threads', search: '' },
@@ -126,7 +125,6 @@ describe('apiClient', () => {
         message: 'Session expired',
       });
       expect(window.location.href).toBe('/login?next=%2Fthreads');
-      // Restore
       Object.defineProperty(window, 'location', { writable: true, value: originalLocation });
     });
 
@@ -179,5 +177,113 @@ describe('apiClient', () => {
       const result = await apiClient.delete('/threads/1');
       expect(result).toBeUndefined();
     });
+  });
+});
+
+describe('createSseStream', () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('returns a ReadableStreamDefaultReader that yields decoded text', async () => {
+    const encoder = new TextEncoder();
+    const body = new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoder.encode('data: hello\n\n'));
+        controller.close();
+      },
+    });
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, body });
+
+    const reader = await createSseStream(
+      { message: 'hi', threadId: 1 },
+      new AbortController().signal,
+    );
+    const { value, done } = await reader.read();
+    expect(done).toBe(false);
+    expect(value).toContain('data: hello');
+  });
+
+  it('throws ApiClientError when response status is not ok', async () => {
+    globalThis.fetch = makeFetchMock(503, undefined);
+    await expect(
+      createSseStream({ message: 'hi' }, new AbortController().signal),
+    ).rejects.toMatchObject({ statusCode: 503, message: 'Stream request failed' });
+  });
+
+  it('throws ApiClientError when response body is null', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, body: null });
+    await expect(
+      createSseStream({ message: 'hi' }, new AbortController().signal),
+    ).rejects.toBeInstanceOf(ApiClientError);
+  });
+});
+
+describe('abortSseStream', () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('POSTs to /api/proxy/chat/abort with the sessionId', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200, json: vi.fn() });
+    await abortSseStream('sess-456');
+    const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toContain('/api/proxy/chat/abort');
+    expect(JSON.parse(opts.body as string)).toEqual({ sessionId: 'sess-456' });
+    expect(opts.method).toBe('POST');
+  });
+
+  it('resolves without throwing even if fetch rejects (fire-and-forget)', async () => {
+    // abortSseStream internally awaits fetch but doesn't check ok — just awaits
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: vi.fn() });
+    await expect(abortSseStream('sess-err')).resolves.toBeUndefined();
+  });
+});
+
+describe('uploadFile', () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('returns the raw Response on success', async () => {
+    const mockResponse = { ok: true, status: 200 };
+    globalThis.fetch = vi.fn().mockResolvedValue(mockResponse);
+    const result = await uploadFile(new FormData());
+    expect(result).toBe(mockResponse);
+  });
+
+  it('throws ApiClientError on non-ok response', async () => {
+    globalThis.fetch = makeFetchMock(413, undefined);
+    await expect(uploadFile(new FormData())).rejects.toMatchObject({
+      statusCode: 413,
+      message: 'File upload failed',
+    });
+  });
+
+  it('forwards the AbortSignal to fetch', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    const signal = new AbortController().signal;
+    await uploadFile(new FormData(), signal);
+    const opts = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0][1] as RequestInit;
+    expect(opts.signal).toBe(signal);
+  });
+
+  it('calls /api/proxy/files/upload via POST with FormData as body', async () => {
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    const fd = new FormData();
+    await uploadFile(fd);
+    const [url, opts] = (globalThis.fetch as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      RequestInit,
+    ];
+    expect(url).toContain('/api/proxy/files/upload');
+    expect(opts.method).toBe('POST');
+    expect(opts.body).toBe(fd);
   });
 });

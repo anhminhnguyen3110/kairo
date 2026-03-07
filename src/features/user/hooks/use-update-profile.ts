@@ -8,7 +8,6 @@ export function useUpdateProfile() {
   return useMutation({
     mutationFn: (payload: UpdateProfilePayload) => userApi.updateProfile(payload),
     onSuccess: () => {
-      // Invalidate the cached profile so any component reading `useMe()` gets fresh data.
       void queryClient.invalidateQueries({ queryKey: ME_QUERY_KEY });
     },
   });

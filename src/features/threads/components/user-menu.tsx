@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQueryClient } from '@tanstack/react-query';
 import { Globe, LogOut } from 'lucide-react';
 import { authApi } from '@/features/auth/api/auth-api';
 import { useMe, displayNameFromEmail } from '@/features/user/hooks/use-me';
@@ -9,6 +10,7 @@ import { TimezoneSettingsModal } from '@/features/user/components/timezone-setti
 
 export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showTimezone, setShowTimezone] = useState(false);
   const { data: me } = useMe();
@@ -21,6 +23,7 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
     try {
       await authApi.logout();
     } finally {
+      queryClient.clear();
       router.push('/login');
       router.refresh();
     }
@@ -38,7 +41,6 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
               : 'flex items-center gap-2.5 w-full px-2 py-2 rounded-lg text-[13px] text-sidebar-text group'
           }
         >
-          {/* Avatar */}
           <div
             className="w-6 h-6 rounded-full bg-[#CC785C]/20 border border-[#CC785C]/40
                           flex items-center justify-center shrink-0"

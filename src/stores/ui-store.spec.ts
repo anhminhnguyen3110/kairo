@@ -3,7 +3,6 @@ import { describe, it, expect, beforeEach } from 'vitest';
 let useUiStore: typeof import('./ui-store').useUiStore;
 
 beforeEach(async () => {
-  // Reset modules so each test starts from a clean initial state
   const mod = await import('./ui-store');
   useUiStore = mod.useUiStore;
   useUiStore.setState({
@@ -16,8 +15,6 @@ beforeEach(async () => {
 });
 
 describe('useUiStore', () => {
-  // ─── initial state ─────────────────────────────────────────────────────────
-
   describe('initial state', () => {
     it('sidebar is open', () => {
       expect(useUiStore.getState().sidebarOpen).toBe(true);
@@ -40,8 +37,6 @@ describe('useUiStore', () => {
     });
   });
 
-  // ─── toggleSidebar ─────────────────────────────────────────────────────────
-
   describe('toggleSidebar()', () => {
     it('closes sidebar when open', () => {
       useUiStore.setState({ sidebarOpen: true });
@@ -56,8 +51,6 @@ describe('useUiStore', () => {
     });
   });
 
-  // ─── setSidebarOpen ────────────────────────────────────────────────────────
-
   describe('setSidebarOpen()', () => {
     it('explicitly sets sidebar to false', () => {
       useUiStore.getState().setSidebarOpen(false);
@@ -70,8 +63,6 @@ describe('useUiStore', () => {
       expect(useUiStore.getState().sidebarOpen).toBe(true);
     });
   });
-
-  // ─── setIsMobile ───────────────────────────────────────────────────────────
 
   describe('setIsMobile()', () => {
     it('sets isMobile true and closes sidebar on mobile', () => {
@@ -90,8 +81,6 @@ describe('useUiStore', () => {
     });
   });
 
-  // ─── openSearch / closeSearch ──────────────────────────────────────────────
-
   describe('openSearch() / closeSearch()', () => {
     it('opens search', () => {
       useUiStore.getState().openSearch();
@@ -104,8 +93,6 @@ describe('useUiStore', () => {
       expect(useUiStore.getState().searchOpen).toBe(false);
     });
   });
-
-  // ─── toggleFilePanel / setFilePanelOpen ────────────────────────────────────
 
   describe('toggleFilePanel()', () => {
     it('opens file panel when closed', () => {
@@ -132,8 +119,6 @@ describe('useUiStore', () => {
       expect(useUiStore.getState().filePanelOpen).toBe(false);
     });
   });
-
-  // ─── toggleWebSearch / setWebSearchEnabled ─────────────────────────────────
 
   describe('toggleWebSearch()', () => {
     it('enables web search when disabled', () => {

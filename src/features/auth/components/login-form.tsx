@@ -6,9 +6,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { loginSchema, type LoginFormData } from '../schemas/login-schema';
 import { authApi } from '../api/auth-api';
 import { ApiClientError } from '@/lib/api-client';
+import { ME_QUERY_KEY } from '@/features/user/hooks/use-me';
 
 function getFriendlyLoginError(err: unknown): string {
   if (err instanceof ApiClientError) {
@@ -21,6 +23,7 @@ function getFriendlyLoginError(err: unknown): string {
 
 export function LoginForm() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') ?? '/threads';
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +44,11 @@ export function LoginForm() {
   const onSubmit = async (data: LoginFormData) => {
     setError(null);
     try {
-      await authApi.login(data);
+      const response = await authApi.login(data);
+      queryClient.clear();
+      if (response?.user) {
+        queryClient.setQueryData(ME_QUERY_KEY, response.user);
+      }
       router.push(next);
       router.refresh();
     } catch (err) {

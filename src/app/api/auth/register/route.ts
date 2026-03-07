@@ -42,7 +42,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ email: body.email, password: body.password }),
     });
   } catch {
-    // register succeeded but auto-login failed — redirect to login page
     return NextResponse.json({ redirectTo: '/login' }, { status: 201 });
   }
 

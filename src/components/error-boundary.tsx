@@ -42,7 +42,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    // TODO: forward to Sentry / error monitoring when integrated.
     console.error('[ErrorBoundary] Caught render error:', error, info.componentStack);
   }
 

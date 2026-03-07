@@ -8,7 +8,7 @@ import { useFiles, useUploadFile, useDeleteFile } from '../hooks/use-files';
 import { FileBadge } from './file-badge';
 
 const ACCEPTED = '.pdf,.txt,.md,.docx,.doc,.csv,.json,.xml,.html,.htm';
-const MAX_SIZE_MB = 25;
+const MAX_SIZE_MB = 10;
 
 export function FilePanel() {
   const { filePanelOpen, toggleFilePanel } = useUiStore();

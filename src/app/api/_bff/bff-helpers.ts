@@ -1,10 +1,7 @@
 export const COOKIE_ACCESS_TOKEN = 'access_token';
 export const COOKIE_REFRESH_TOKEN = 'refresh_token';
 
-// Cookie maxAge should be longer than JWT expiry to allow refresh mechanism to work.
-// Frontend proxy will auto-refresh expired tokens, so keep cookies alive for full session.
-export const ACCESS_TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 days (match refresh token)
-
+export const ACCESS_TOKEN_MAX_AGE = 7 * 24 * 60 * 60;
 export const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60;
 
 export function getBeUrl(path: string): string {
@@ -19,7 +16,6 @@ export const cookieOptions = {
   path: '/',
 };
 
-/** Safely parse JSON from a Response. Returns null if the body is empty or not valid JSON. */
 export async function safeJson<T = unknown>(res: Response): Promise<T | null> {
   try {
     const text = await res.text();

@@ -72,19 +72,11 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/**
- * Returns the uppercased file extension from a filename (e.g. 'file.pdf' → 'PDF').
- * Returns 'FILE' when no extension is found.
- */
 export function fileExt(name: string): string {
   if (!name.includes('.')) return 'FILE';
   return name.split('.').pop()?.toUpperCase() ?? 'FILE';
 }
 
-/**
- * Derives a human-readable display name from an email address.
- * e.g. 'jane.doe@example.com' → 'Jane Doe'
- */
 export function displayNameFromEmail(email: string): string {
   const prefix = email.split('@')[0] ?? email;
   return prefix

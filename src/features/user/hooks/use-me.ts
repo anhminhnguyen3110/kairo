@@ -12,5 +12,4 @@ export function useMe() {
   });
 }
 
-// Re-export for convenience so existing callers do not need to change
 export { displayNameFromEmail } from '@/lib/utils';

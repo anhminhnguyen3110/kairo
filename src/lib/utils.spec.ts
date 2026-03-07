@@ -11,13 +11,10 @@ import {
 } from './utils';
 import type { Thread } from '@/types';
 
-// ─── formatDate ──────────────────────────────────────────────────────────────
-
 describe('formatDate()', () => {
   it('returns a time string for a same-day date', () => {
     const now = new Date();
     const result = formatDate(now.toISOString());
-    // Should contain AM or PM (12-hour format)
     expect(result).toMatch(/[AP]M/i);
   });
 
@@ -32,8 +29,6 @@ describe('formatDate()', () => {
     expect(result).toMatch(/Jan/);
   });
 });
-
-// ─── formatBytes ─────────────────────────────────────────────────────────────
 
 describe('formatBytes()', () => {
   it('formats bytes below 1 KB as "X B"', () => {
@@ -54,8 +49,6 @@ describe('formatBytes()', () => {
   });
 });
 
-// ─── fileExt ─────────────────────────────────────────────────────────────────
-
 describe('fileExt()', () => {
   it('returns uppercase extension', () => {
     expect(fileExt('document.pdf')).toBe('PDF');
@@ -75,8 +68,6 @@ describe('fileExt()', () => {
     expect(fileExt('archive.tar.gz')).toBe('GZ');
   });
 });
-
-// ─── displayNameFromEmail ────────────────────────────────────────────────────
 
 describe('displayNameFromEmail()', () => {
   it('capitalises each name segment at dots', () => {
@@ -100,8 +91,6 @@ describe('displayNameFromEmail()', () => {
   });
 });
 
-// ─── truncate ────────────────────────────────────────────────────────────────
-
 describe('truncate()', () => {
   it('returns the original string when it fits within maxLength', () => {
     expect(truncate('hello', 10)).toBe('hello');
@@ -112,8 +101,6 @@ describe('truncate()', () => {
     expect(truncate('hello world', 5)).toBe('hello…');
   });
 });
-
-// ─── groupThreadsByTimeFrame ──────────────────────────────────────────────────
 
 describe('groupThreadsByTimeFrame()', () => {
   const makeThread = (id: number, timeFrame: Thread['timeFrame']): Thread =>
@@ -137,16 +124,12 @@ describe('groupThreadsByTimeFrame()', () => {
   });
 });
 
-// ─── TIME_FRAME_ORDER ─────────────────────────────────────────────────────────
-
 describe('TIME_FRAME_ORDER', () => {
   it('starts with today and ends with older', () => {
     expect(TIME_FRAME_ORDER[0]).toBe('today');
     expect(TIME_FRAME_ORDER[TIME_FRAME_ORDER.length - 1]).toBe('older');
   });
 });
-
-// ─── TIME_FRAME_LABELS ────────────────────────────────────────────────────────
 
 describe('TIME_FRAME_LABELS', () => {
   it('has a label for every entry in TIME_FRAME_ORDER', () => {
