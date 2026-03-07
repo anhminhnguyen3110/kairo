@@ -293,7 +293,7 @@ function renderValue(val: unknown, depth = 0): React.ReactNode {
       return (
         <span className="text-stone-300 break-words">
           &ldquo;{val.slice(0, 300)}
-          <span className="text-stone-500">â€¦({val.length} chars)</span>&rdquo;
+          <span className="text-stone-500">...({val.length} chars)</span>&rdquo;
         </span>
       );
     return <span className="text-stone-300 break-words">&ldquo;{val}&rdquo;</span>;
@@ -309,7 +309,7 @@ function renderValue(val: unknown, depth = 0): React.ReactNode {
             {i < Math.min(val.length, 5) - 1 && <span className="text-stone-600">,</span>}
           </div>
         ))}
-        {val.length > 5 && <div className="ml-4 text-stone-500">â€¦{val.length - 5} more</div>}
+        {val.length > 5 && <div className="ml-4 text-stone-500">...{val.length - 5} more</div>}
         <span className="text-stone-500">]</span>
       </span>
     );
@@ -341,7 +341,7 @@ function GenericToolCard({ name, input, output, status }: ToolEventCardProps) {
   const inputEntries = Object.entries(parsedInput);
   const previewEntry = inputEntries.find(([, v]) => typeof v === 'string');
   const previewText = previewEntry
-    ? String(previewEntry[1]).slice(0, 60) + (String(previewEntry[1]).length > 60 ? 'â€¦' : '')
+    ? String(previewEntry[1]).slice(0, 60) + (String(previewEntry[1]).length > 60 ? '...' : '')
     : null;
 
   return (
@@ -365,7 +365,7 @@ function GenericToolCard({ name, input, output, status }: ToolEventCardProps) {
           </span>
         </span>
         {previewText && !expanded && (
-          <span className="flex-1 truncate text-stone-500 font-normal ml-1">â€” {previewText}</span>
+          <span className="flex-1 truncate text-stone-500 font-normal ml-1">— {previewText}</span>
         )}
         <span className="ml-auto shrink-0 text-stone-500">
           {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}

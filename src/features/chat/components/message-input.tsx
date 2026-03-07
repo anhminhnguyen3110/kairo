@@ -384,7 +384,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
         <textarea
           ref={textareaRef}
           rows={1}
-          placeholder={pendingFiles.length > 0 ? 'Add a messageâ€¦' : 'Type / for commands'}
+          placeholder={pendingFiles.length > 0 ? 'Add a message...' : 'Type / for commands'}
           className="
             w-full resize-none bg-transparent outline-none
             px-4 pt-3 pb-1 text-sm text-[#ECECEC] placeholder:text-stone-500
@@ -476,7 +476,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
                   bg-blue-500/15 border border-blue-500/30 text-blue-400
                   text-[11px] cursor-pointer select-none
                 "
-                title="Web search enabled â€” click to disable"
+                title="Web search enabled — click to disable"
                 onClick={toggleWebSearch}
               >
                 <Globe size={11} />

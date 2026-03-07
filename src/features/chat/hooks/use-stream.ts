@@ -294,10 +294,17 @@ export function useStream() {
                     }
 
                     for (const opt of [...currentOptimistic].reverse()) {
-                      toInject.push({
-                        ...opt,
-                        orderIndex: Number.MAX_SAFE_INTEGER - 1,
-                      });
+                      // Skip injection if a matching real message is already in the cache
+                      // (race: useMessages fetched the user message before message_stop fired)
+                      const alreadyInCache = firstPage.data.some(
+                        (m) => m.role === opt.role && m.content === opt.content,
+                      );
+                      if (!alreadyInCache) {
+                        toInject.push({
+                          ...opt,
+                          orderIndex: Number.MAX_SAFE_INTEGER - 1,
+                        });
+                      }
                     }
 
                     cacheInjected = true;
