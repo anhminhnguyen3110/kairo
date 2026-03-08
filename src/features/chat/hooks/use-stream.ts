@@ -255,7 +255,6 @@ export function useStream() {
                 const currentToolEvents = useChatStore.getState().streamingToolEvents;
 
                 const toolCallsForCache = currentToolEvents
-                  .filter((e) => e.name !== 'think')
                   .map((e) => ({ id: e.id, name: e.name, input: e.input, output: e.output }));
 
                 const artifactsForCache =
