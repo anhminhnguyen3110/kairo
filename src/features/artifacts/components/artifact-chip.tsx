@@ -1,6 +1,6 @@
 'use client';
 
-import { Code2, FileCode2, Download, Eye } from 'lucide-react';
+import { Code2, FileCode2, Eye } from 'lucide-react';
 import { useArtifactStore } from '@/stores/artifact-store';
 import { ArtifactType } from '@/types';
 import { artifactsApi } from '../api/artifacts-api';

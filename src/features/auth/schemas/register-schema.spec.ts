@@ -43,7 +43,6 @@ describe('registerSchema', () => {
   });
 
   it('rejects missing confirmPassword', () => {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { confirmPassword: _confirmPassword, ...noConfirm } = valid;
     expect(registerSchema.safeParse(noConfirm).success).toBe(false);
   });

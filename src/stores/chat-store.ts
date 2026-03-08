@@ -91,7 +91,11 @@ export const useChatStore = create<ChatState>()(
           state.abortController = null;
           state.streamingSessionId = null;
           state.optimisticMessages = [];
-        } else if (!isChangingThread && state.streamingStatus !== 'streaming' && state.streamingStatus !== 'saving') {
+        } else if (
+          !isChangingThread &&
+          state.streamingStatus !== 'streaming' &&
+          state.streamingStatus !== 'saving'
+        ) {
           state.streamingStatus = 'idle';
           state.streamingContent = '';
           state.streamingToolEvents = [];

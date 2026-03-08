@@ -100,7 +100,7 @@ export function MessageList({ threadId, children }: MessageListProps) {
           </div>
 
           {}
-          {allMessages.length === 0 && deduplicatedOptimistic.length === 0 && (
+          {!isLoading && allMessages.length === 0 && deduplicatedOptimistic.length === 0 && (
             <div className="flex flex-col items-center justify-center h-[50vh] text-center">
               <p className="text-2xl font-semibold text-stone-800 mb-2">
                 How can I help you today?
