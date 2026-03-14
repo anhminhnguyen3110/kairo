@@ -1,6 +1,6 @@
 import type { AttachmentMeta, LlmProvider } from '@/types';
 
-export type StreamingStatus = 'idle' | 'streaming' | 'saving' | 'error';
+export type StreamingStatus = 'idle' | 'streaming' | 'saving' | 'error' | 'aborted';
 
 export interface StreamingToolEvent {
   id: string;

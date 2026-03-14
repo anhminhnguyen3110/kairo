@@ -21,9 +21,9 @@ import { useClickOutside } from '@/lib/hooks/use-click-outside';
 import { threadsApi } from '@/features/threads/api/threads-api';
 import { filesApi } from '@/features/files/api/files-api';
 import { THREADS_QUERY_KEY } from '@/features/threads/hooks/use-threads';
-import { getMessagesQueryKey } from '../hooks/use-messages';
 
-const ACCEPTED = '.pdf,.txt,.md,.docx,.doc,.csv,.json,.xml,.html,.htm';
+const ACCEPTED =
+  '.pdf,.txt,.md,.docx,.doc,.csv,.json,.xml,.html,.htm,.py,.js,.ts,.jsx,.tsx,.sh,.yaml,.yml,.toml,.env,.rb,.go,.rs,.java,.cpp,.c,.cs,.php,.swift,.kt';
 const ACCEPTED_EXTENSIONS = new Set(ACCEPTED.split(','));
 const MAX_SIZE_MB = 10;
 const MAX_TEXTAREA_ROWS = 8;
@@ -116,6 +116,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [hasText, setHasText] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [fileValidationError, setFileValidationError] = useState<string | null>(null);
 
   const qc = useQueryClient();
 
@@ -338,17 +339,13 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
       abortSseStream(streamingSessionId).catch(() => null);
     }
     abortStream();
-    // Re-fetch messages after a short delay so the backend has time to persist
-    // whatever partial content it produced before the abort signal was processed.
-    if (threadId) {
-      setTimeout(() => {
-        void qc.invalidateQueries({ queryKey: getMessagesQueryKey(threadId) });
-      }, 800);
-    }
-  }, [streamingSessionId, abortStream, threadId, qc]);
+    // invalidateQueries is handled by use-stream.ts after the AbortError is caught,
+    // waiting for the server-persisted partial message before clearing the bubble.
+  }, [streamingSessionId, abortStream]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+    let rejectionMessage: string | null = null;
     const valid = files.filter((f) => {
       // Extension validation — reject unsupported types with a clear message
       const ext = '.' + (f.name.split('.').pop() ?? '').toLowerCase();
@@ -356,22 +353,19 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
         // Distinguish images (no vision model) from other unsupported types
         const isImage = f.type.startsWith('image/');
         if (isImage) {
-          alert(
-            `"${f.name}" is an image file. Image uploads are not supported — no vision model is configured.\n\nSupported formats: ${ACCEPTED}`,
-          );
+          rejectionMessage = `"${f.name}" is an image file. Image uploads are not supported — no vision model is configured. Supported: ${ACCEPTED}`;
         } else {
-          alert(
-            `"${f.name}" has an unsupported file type (${ext || 'unknown'}).\n\nSupported formats: ${ACCEPTED}`,
-          );
+          rejectionMessage = `"${f.name}" has an unsupported file type (${ext || 'unknown'}). Supported: ${ACCEPTED}`;
         }
         return false;
       }
       if (f.size > MAX_SIZE_MB * 1024 * 1024) {
-        alert(`"${f.name}" exceeds ${MAX_SIZE_MB} MB limit.`);
+        rejectionMessage = `"${f.name}" exceeds the ${MAX_SIZE_MB} MB upload limit.`;
         return false;
       }
       return true;
     });
+    setFileValidationError(rejectionMessage);
     setPendingFiles((prev) => [...prev, ...valid]);
     e.target.value = '';
     setPlusMenuOpen(false);
@@ -426,6 +420,16 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
                 onRemove={() => removeFile(i)}
               />
             ))}
+          </div>
+        )}
+
+        {fileValidationError && (
+          <div
+            role="alert"
+            className="mx-3 mt-2 px-3 py-2 rounded-lg bg-red-950/50 border border-red-800/60 text-red-400 text-xs"
+            onClick={() => setFileValidationError(null)}
+          >
+            {fileValidationError}
           </div>
         )}
 

@@ -22,8 +22,8 @@ export function MessageList({ threadId, children }: MessageListProps) {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useMessages(threadId);
-  const { optimisticMessages, streamingStatus } = useChatStore();
-  const { send } = useStream();
+  const { optimisticMessages, streamingStatus, lastAbortedSessionId } = useChatStore();
+  const { send, resumeStream } = useStream();
 
   // Handle stream resume on initial load if the last message is from the user and has a sessionId
   useEffect(() => {
@@ -37,17 +37,19 @@ export function MessageList({ threadId, children }: MessageListProps) {
 
     if (messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
-      if (lastMsg.role === 'USER' && lastMsg.metadata?.sessionId) {
+      const sessionId = lastMsg.metadata?.sessionId as string | undefined;
+      // Skip auto-resume if: not a USER message, no sessionId, or session was intentionally aborted
+      if (lastMsg.role === 'USER' && sessionId && sessionId !== lastAbortedSessionId) {
         // Automatically attempt to resume stream
         send({
           threadId,
           message: '',
-          sessionId: lastMsg.metadata.sessionId as string,
+          sessionId,
           isResume: true,
         }).catch(console.error);
       }
     }
-  }, [isLoading, data, streamingStatus, threadId, send]);
+  }, [isLoading, data, streamingStatus, threadId, send, lastAbortedSessionId]);
 
   // Track whether the bottom sentinel is visible — if not, show the scroll button
   useEffect(() => {
@@ -96,14 +98,23 @@ export function MessageList({ threadId, children }: MessageListProps) {
   // Auto-scroll on each streaming token WITHOUT re-rendering the whole component.
   // Using store.subscribe avoids a component re-render on every token append.
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
     const unsub = useChatStore.subscribe((state, prevState) => {
       if (state.streamingContent === prevState.streamingContent) return;
       if (!isAtBottomRef.current) return;
       if (state.streamingStatus === 'streaming') {
-        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (!timeoutId) {
+          timeoutId = setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+            timeoutId = null;
+          }, 100);
+        }
       }
     });
-    return unsub;
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      unsub();
+    };
   }, []);
 
   useEffect(() => {
@@ -131,6 +142,11 @@ export function MessageList({ threadId, children }: MessageListProps) {
     (opt) => !deduplicatedAllMessages.some((m) => m.role === opt.role && m.content === opt.content),
   );
 
+  const lastMessageId =
+    deduplicatedAllMessages.length > 0
+      ? deduplicatedAllMessages[deduplicatedAllMessages.length - 1].id
+      : null;
+
   return (
     <div className="flex-1 relative overflow-hidden flex flex-col">
       <div ref={containerRef} className="flex-1 overflow-y-auto">
@@ -145,6 +161,7 @@ export function MessageList({ threadId, children }: MessageListProps) {
 
           {}
           {!isLoading &&
+            streamingStatus === 'idle' &&
             deduplicatedAllMessages.length === 0 &&
             deduplicatedOptimistic.length === 0 && (
               <div className="flex flex-col items-center justify-center h-[50vh] text-center">
@@ -157,7 +174,12 @@ export function MessageList({ threadId, children }: MessageListProps) {
 
           {}
           {deduplicatedAllMessages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
+            <MessageBubble
+              key={message.id}
+              message={message}
+              isLastMessage={message.id === lastMessageId}
+              onResume={() => void resumeStream(threadId)}
+            />
           ))}
 
           {}

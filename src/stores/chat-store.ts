@@ -25,6 +25,9 @@ interface ChatState {
 
   optimisticMessages: Message[];
 
+  /** Tracks the last user-aborted session so auto-resume skips it. */
+  lastAbortedSessionId: string | null;
+
   pendingMessage: PendingMessage | null;
   setPendingMessage: (msg: PendingMessage | null) => void;
 
@@ -59,6 +62,7 @@ export const useChatStore = create<ChatState>()(
     streamingSessionId: null,
     streamingArtifactIds: [],
     optimisticMessages: [],
+    lastAbortedSessionId: null,
 
     setPendingMessage: (msg) =>
       set((state) => {
@@ -97,7 +101,8 @@ export const useChatStore = create<ChatState>()(
         } else if (
           !isChangingThread &&
           state.streamingStatus !== 'streaming' &&
-          state.streamingStatus !== 'saving'
+          state.streamingStatus !== 'saving' &&
+          state.streamingStatus !== 'aborted'
         ) {
           state.streamingStatus = 'idle';
           state.streamingContent = '';
@@ -188,15 +193,26 @@ export const useChatStore = create<ChatState>()(
       }),
 
     abortStream: () => {
-      const { abortController } = get();
+      const { abortController, streamingSessionId } = get();
+      // Set status BEFORE calling abort() so that any in-flight SSE error event
+      // sees streamingStatus === 'aborted' and skips showing the error box.
+      set((state) => {
+        state.streamingStatus = 'aborted';
+        // Keep streamingContent so StreamingBubble stays visible until real message loads
+        // Track the aborted sessionId so the auto-resume effect ignores it.
+        state.lastAbortedSessionId = streamingSessionId;
+        state.abortController = null;
+        state.streamingSessionId = null;
+        // Immediately mark any mid-execution tool as done so the UI shows
+        // "Used ..." + checkmark instead of the spinner while we wait for the
+        // server-persisted message to load.
+        state.streamingToolEvents = state.streamingToolEvents.map((e) =>
+          e.status === 'pending' ? { ...e, status: 'done' } : e,
+        );
+      });
       if (abortController) {
         (abortController as unknown as AbortController).abort();
       }
-      set((state) => {
-        state.streamingStatus = 'idle';
-        state.streamingContent = '';
-        state.abortController = null;
-      });
     },
 
     setStreamError: (message) =>

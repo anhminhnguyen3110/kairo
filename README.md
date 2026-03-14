@@ -1,297 +1,294 @@
 ﻿# Kairo Frontend
 
-Next.js 16 chat interface for the Kairo AI agent platform. Real-time SSE token streaming, side-by-side artifact panel, tool call cards, file uploads, thread management, model selector with 183+ models, and persistent agent memory.
+Next.js chat interface for the Kairo AI agent platform. Real-time SSE token streaming, side-by-side artifact panel, tool call cards, file uploads, thread management, model selector with 183+ models, and persistent agent memory.
 
-**Stack:** Next.js 16 React 19 TanStack Query 5 Zustand 5 Tailwind CSS 4  
-**Tests:** 148 passing across 12 spec files (Vitest + Testing Library)
-
----
-
-## Run Locally
-
-> Requires Node.js ≥ 22, pnpm ≥ 9, and the backend running at http://localhost:3001.
-
-```bash
-cd fe
-pnpm install
-pnpm dev                       # Turbopack hot reload → http://localhost:3000
-```
-
-```bash
-# Production build
-pnpm build && pnpm start
-```
-
-## Deploy with Docker
-
-```bash
-# Full stack (recommended) — run from repo root
-cp .env.example be/.env        # fill in secrets
-docker compose up -d --build
-# open http://localhost:3000
-```
-
-```bash
-# Production — nginx on :80, external DB + Redis, no exposed FE/BE ports
-docker compose -f docker-compose.prod.yml up -d --build
-# open http://localhost
-```
-
-```bash
-# Frontend-only Docker build
-cd fe
-docker build -t kairo-fe .
-docker run -p 3000:3000 \
-  -e API_INTERNAL_URL=http://host.docker.internal:3001 \
-  -e NEXT_PUBLIC_SITE_URL=http://localhost:3000 \
-  kairo-fe
-```
+**Stack:** Next.js 16 · React 19 · TanStack Query 5 · Zustand 5 · Tailwind CSS 4
+**Tests:** 188 passing across 16 spec files (Vitest + Testing Library)
 
 ---
 
 ## Table of Contents
 
 1. [Features](#features)
-2. [Demo](#demo)
-3. [Quick Start — Local](#quick-start--local)
-4. [Deploy with Docker](#deploy-with-docker)
-5. [Environment Variables](#environment-variables)
-6. [Architecture](#architecture)
-7. [Testing](#testing)
-8. [Project Structure](#project-structure)
-9. [Key Routes](#key-routes)
+2. [Quick Start](#quick-start)
+3. [Deploy with Docker](#deploy-with-docker)
+4. [Environment Variables](#environment-variables)
+5. [Architecture](#architecture)
+6. [Testing](#testing)
+7. [Project Structure](#project-structure)
+8. [Key Routes](#key-routes)
 
 ---
 
 ## Features
 
-### Chat & Streaming
+### Authentication — Register & Login
 
-- **SSE token streaming** `POST /api/proxy/chat/send` with `stream: true`. Tokens render word-by-word in the assistant bubble as they arrive from the LLM. No polling, no WebSocket HTTP/1.1 native.
-- **Auto-scroll** chat viewport follows the stream; a floating action button appears when the user scrolls up so they can jump back to the bottom instantly.
-- **Streaming session ID** each SSE stream is tagged with a `sessionId`. The abort button sends `POST /chat/abort` with the same ID, allowing mid-stream cancellation.
-- **Optimistic messages** the user's message appears instantly in the UI before the server confirms receipt, making the interface feel synchronous.
-- **New thread auto-creation** sending from the empty state creates a thread on the server and navigates to `/threads/:id` only after the stream's `[DONE]` event, avoiding a mid-stream navigation flash.
+Register with email and password, then log in. JWT stored in httpOnly cookies — never accessible to JavaScript. Access token auto-refreshed on 401. Protected routes redirect to `/login`; already-authenticated users visiting `/login` are redirected to `/threads`.
 
-### Tool Cards
-
-Every agent tool call is rendered as an expandable inline card:
-
-| Tool card          | Shows                                        |
-| ------------------ | -------------------------------------------- |
-| `think`            | Internal reasoning in a collapsed scratchpad |
-| `web_search`       | Query + search result snippets               |
-| `write_file`       | Path + content written to workspace          |
-| `read_file`        | Path + content read from workspace           |
-| `edit_file`        | Path + diff-style line edits                 |
-| `search_files`     | Pattern + matching lines                     |
-| `extract_document` | File name + extracted text preview           |
-| `create_artifact`  | Artifact type + title (link to panel)        |
-
-Cards start in loading state on `tool_start` and resolve on `tool_end`. Collapsed by default; click to expand.
-
-### Artifacts
-
-A side-by-side panel opens when the agent generates an artifact:
-
-| Artifact type | Who produces it                    | Renderer                                                 |
-| ------------- | ---------------------------------- | -------------------------------------------------------- |
-| `html`        | Agent (`create_artifact`)          | Sandboxed `<iframe srcDoc>` — full HTML/CSS/JS execution |
-| `code`        | Agent (`create_artifact`)          | Syntax-highlighted code block with language label        |
-| `markdown`    | Agent (`create_artifact`)          | react-markdown with rehype syntax highlight              |
-| `react`       | Agent (via `code` + language hint) | Sandpack live editor (CodeSandbox in-browser)            |
-| `mermaid`     | FE renderer auto-detection         | Mermaid.js SVG diagram renderer                          |
-| `svg`         | FE renderer auto-detection         | Inline SVG rendering                                     |
-
-The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editing the artifact in a follow-up message creates a new version linked to the original via `parentId`.
-
-### File Upload
-
-- Attach button reveals **Upload file** or **Toggle web search** options.
-- Files attach as chips in the input bar, each with an remove button.
-- On send, files are uploaded to the backend before the SSE stream starts so the `fileId` is available to the agent's `extract_document` tool.
-- Supported types: PDF, TXT, Markdown, CSV (up to 10 MB).
-- Uploaded files persist in the thread and are listed in a collapsible files panel.
-- **Paste-to-file**: pasting text longer than 4 000 characters automatically converts it to a `.txt` file attachment instead of inserting into the input box.
-
-### Thread Management
-
-- **Sidebar** lists threads grouped by: Today / Yesterday / Previous 7 days / Previous 30 days / Older.
-- **Hover actions**: `...` button reveals a context menu with Rename, Clone, Delete.
-- **Rename**: inline edit, committed on Enter or blur.
-- **Clone**: `POST /threads/:id/clone` creates a deep copy (messages + files + checkpoints). New thread appears at top of sidebar.
-- **Delete**: confirmation dialog before `DELETE /threads/:id`. Cascade destroys messages, files, artifacts.
-- **Delete all**: `DELETE /threads` from account menu. Clears entire history.
-- **Collapsible sidebar**: toggled by a button in the header. State persisted in `localStorage`.
-
-### Thread Search
-
-- `Ctrl+K` (or `Cmd+K` on Mac) opens a Radix Dialog search modal.
-- Input is debounced 300 ms, calls `GET /threads?search=<query>`.
-- Results are highlighted and clickable navigates to `/threads/:id`.
-
-### Model Selector
-
-- Dropdown in the chat input bar shows the current provider + model.
-- 183+ models grouped by provider: OpenAI, Anthropic, Google, NVIDIA NIM, Meta, Mistral, etc.
-- Filter input inside the dropdown for live search.
-- Selection is persisted in Zustand model store (survives page refresh via `localStorage`).
-- Model change takes effect on the next message in the same thread.
-
-### Authentication
-
-- Register and login forms with Zod validation and react-hook-form.
-- JWT stored in **httpOnly cookies** managed by the Next.js BFF never accessible to JavaScript.
-- Access token (15 min) is automatically refreshed by the BFF proxy when it detects a 401, using the refresh token cookie.
-- Protected routes redirect to `/login` via Next.js middleware (`proxy.ts`). Already-authenticated users visiting `/login` are redirected to `/threads`.
-
-### AI Memory
-
-- Memory is stored in **`AGENTS.md`** at `agent-file/workspace/<userId>/AGENTS.md` — one level above the thread workspace, so it is **per-user and persists across all threads**.
-- Before every LLM call the `memoryMiddleware` reads `AGENTS.md` and injects it as `<agent_memory>` in the system prompt.
-- The agent updates memory with `write_file` when it learns something worth remembering (e.g., name, preferences, role instructions, feedback patterns).
-- File is auto-created with a default header if it does not yet exist — no manual setup needed.
-- Large memory files (>32K chars) are previewed; the agent is instructed to `read_file` the full file before overwriting.
-
-### Agent Intelligence — Todo List & Context Management
-
-- **Persistent todo list** — `todoListMiddleware` gives the agent a structured checklist it can read and update throughout a multi-step task. The list survives between model calls within the same run so complex multi-step tasks are tracked reliably.
-- **Model fallback** — if the primary LLM call fails (rate-limit, provider error), `modelFallbackMiddleware` retries with `gpt-4o-mini` automatically so the conversation never hard-errors.
-- **Tool output chunking** — tool results larger than ~20 000 tokens are saved to a file and the agent receives a reference, preventing context overflow from large `read_file` / `web_search` results.
-- **Message trimming** — oldest messages are dropped when the conversation exceeds ~80 000 tokens, keeping at least the last 3 human turns.
-- **Context editing** — old tool-use turns are cleared (replaced with `[cleared]`) when the context exceeds 100 000 tokens, preserving the last 5 messages and always keeping `think` turns.
-
-### UX Details
-
-- **Copy button** on every message bubble copies to clipboard with a 2-second success tick animation.
-- **Markdown rendering** full GFM (tables, task lists, code fences with syntax highlighting, blockquotes).
-- **Dark mode** follows system preference (`prefers-color-scheme`). Toggle available in sidebar footer.
-- **Scroll-to-bottom FAB** appears when the user scrolls more than 200 px from the latest message.
-- **Disabled input during streaming** send button becomes a Stop button. Input field is disabled until the stream completes.
+![Authentication](docs/screenshots/auth.gif)
 
 ---
 
-## Demo
+### Home Screen & Getting Started
 
-### Authentication — Login & Register
+After login you land on the new-chat screen with a textarea and suggestion chips. Start typing or pick a suggestion to create your first thread.
 
-![Authentication demo](docs/round-1.gif)
-
----
-
-### Starting Screen & Suggestion Chips
-
-![Starting screen and suggestion chips](docs/starting-screen-chips.gif)
+![Home screen](docs/screenshots/home.gif)
 
 ---
 
-### Streaming Chat
+### Chat & Real-Time Streaming
 
-![Streaming chat demo](docs/round-2.gif)
+Send a message and watch tokens appear word-by-word as the LLM streams. The input is disabled during streaming with a **Stop** button to abort mid-stream. After streaming completes, the response is saved and the streaming bubble swaps to a persisted message bubble.
 
----
+![Chat streaming](docs/screenshots/chat_streaming.gif)
 
-### Tool Cards — Web Search & Think
+**Streaming status transitions:**
+```
+idle → streaming → saving → idle
+```
 
-![Tool cards demo](docs/round-3.gif)
-
----
-
-### Artifacts — Live HTML Preview & Code
-
-![Artifacts demo](docs/round-4.gif)
-
----
-
-### Artifacts — Mermaid Diagrams
-
-![Mermaid artifact demo](docs/artifact-mermaid.gif)
-
----
-
-### Artifacts — Draw.io Diagrams
-
-![Draw.io artifact demo](docs/artifact-drawio.gif)
-
----
-
-### Skills — PDF Generation
-
-![PDF skill demo](docs/skill-pdf.gif)
-
----
-
-### Skills — PowerPoint (PPTX)
-
-![PPTX skill demo](docs/skill-pptx.gif)
-
----
-
-### Skills — Word (DOCX)
-
-![DOCX skill demo](docs/skill-docx.gif)
-
----
-
-### Skills — Excel (XLSX)
-
-![XLSX skill demo](docs/skill-xlsx.gif)
-
----
-
-### Skills — CSV Export
-
-![CSV skill demo](docs/skill-csv.gif)
-
----
-
-### File Upload & Document Understanding
-
-![File upload demo](docs/round-5.gif)
-
----
-
-### Thread Management — Rename, Clone, Delete
-
-![Thread management demo](docs/round-6.gif)
-
----
-
-### Thread Search — Ctrl+K
-
-![Thread search demo](docs/round-6.gif)
-
----
-
-### AI Memory — Per-User Persistent
-
-![AI memory demo](docs/round-7.gif)
-
----
-
-### Scroll UX & Abort
-
-![Scroll UX + abort demo](docs/round-8.gif)
+- **Optimistic messages** — user message appears instantly before server confirms
+- **Session IDs** — each stream is tagged; abort sends `POST /chat/abort` with the same ID
+- **Auto-scroll** — viewport follows the stream; a FAB jumps back when the user scrolls up
 
 ---
 
 ### Model Selector — 183+ Models
 
-![Model selector demo](docs/round-9.gif)
+Choose from 183+ models grouped by provider: OpenAI, Anthropic, Google, NVIDIA NIM, Meta, Mistral, and more. Live search filter inside the dropdown. Selection persists in `localStorage` and takes effect on the next message.
+
+![Model selector](docs/screenshots/home.gif)
 
 ---
 
-### Session & Protected Routes
+### Think Tool — Agent Reasoning
 
-![Session persistence demo](docs/round-10.gif)
+When the agent uses the `think` tool, an expandable scratchpad card appears inline. Click to expand and read the agent's step-by-step reasoning before the final answer.
 
-## Quick Start — Local
+![Think tool](docs/screenshots/think_tool.gif)
+
+---
+
+### Web Search Tool
+
+Click the web search toggle in the input bar to enable it. The agent searches the web in real time and shows a tool card with the query and result snippets.
+
+![Web search](docs/screenshots/web_search.gif)
+
+---
+
+### Artifacts — HTML
+
+Ask the agent to build a web page or UI component. The artifact panel opens alongside the chat with a live iframe preview. Switch to the **Source code** tab to inspect the HTML.
+
+![HTML artifact](docs/screenshots/html_artifact.gif)
+
+---
+
+### Artifacts — React
+
+Ask for a React component. The artifact panel renders it live in a Sandpack (CodeSandbox in-browser) sandbox with hot reload.
+
+![React artifact](docs/screenshots/react_artifact.gif)
+
+---
+
+### Artifacts — Markdown Document
+
+Ask for a Markdown report or document. The artifact panel renders it with full GFM: tables, task lists, code fences with syntax highlighting, and blockquotes.
+
+![Markdown artifact](docs/screenshots/markdown_artifact.gif)
+
+---
+
+### Artifacts — Mermaid Diagram
+
+Ask for a flowchart, sequence diagram, or any Mermaid chart. The panel renders it as an SVG using Mermaid.js.
+
+![Mermaid artifact](docs/screenshots/mermaid_artifact.gif)
+
+---
+
+### Artifacts — SVG Graphic
+
+Ask for an SVG image or icon. The panel renders it inline.
+
+![SVG artifact](docs/screenshots/svg_artifact.gif)
+
+---
+
+### Artifacts — Code File
+
+Ask for a Python script, TypeScript module, CSS stylesheet, or any code file. The panel renders it with syntax highlighting and a language label.
+
+![Code artifact](docs/screenshots/code_artifact.gif)
+
+---
+
+### Artifact Toolbar — Version Navigation
+
+Each time the agent edits an artifact, a new version is created linked via `parentId`. The toolbar shows **v1/N** navigation arrows to step through the full history.
+
+Toolbar actions:
+- **Preview / Source code** tab toggle
+- **Copy** content to clipboard
+- **Download** artifact
+- **v1/N ◀ ▶** version navigation (shown when N > 1)
+
+![Artifact toolbar](docs/screenshots/html_artifact.gif)
+
+---
+
+### File Upload & Document Understanding
+
+Attach files (PDF, TXT, Markdown, CSV — up to 10 MB) using the paperclip button. Files appear as chips in the input bar. On send, files are uploaded before the SSE stream so `fileId` is available to the agent's `extract_document` tool.
+
+**Paste-to-file:** pasting text longer than 4 000 characters auto-converts it to a `.txt` attachment.
+
+![File upload](docs/screenshots/file_upload.gif)
+
+Uploaded files persist in the thread and are listed in a collapsible **Files panel** in the thread header.
+
+![File panel](docs/screenshots/file_upload.gif)
+
+---
+
+### Thread Management — Rename, Clone, Delete
+
+Hover over any thread in the sidebar to reveal the `...` button. The context menu offers:
+
+- **Rename** — inline edit, commit on Enter or blur
+- **Clone** — deep copy with all messages, files, and checkpoints; new thread appears at the top
+- **Delete** — two-step confirmation to prevent accidental data loss
+
+![Thread management](docs/screenshots/thread_management.gif)
+
+---
+
+### Thread Search — Ctrl+K
+
+Press `Ctrl+K` (or `Cmd+K` on Mac) to open the search modal. Results are debounced 300 ms and highlighted. Click a result to navigate to the thread.
+
+![Thread search](docs/screenshots/search.gif)
+
+---
+
+### Sidebar — Collapsible & Thread Groups
+
+Threads are grouped by recency: **Today / Yesterday / Previous 7 days / Previous 30 days / Older**. Collapse the sidebar with the toggle button; state persists in `localStorage`.
+
+![Sidebar](docs/screenshots/sidebar.gif)
+
+With multiple threads:
+
+![Thread list](docs/screenshots/thread_list.gif)
+
+---
+
+### Mobile — Responsive Sidebar
+
+On screens ≤ 767 px the sidebar is hidden by default and overlaid when opened. The `useLayoutEffect` mobile detection prevents a layout flash before paint.
+
+![Mobile sidebar](docs/screenshots/mobile.gif)
+
+---
+
+### User Menu — Sign Out
+
+The user menu in the sidebar footer shows the logged-in email and a **Sign out** button with text label (not icon-only).
+
+![User menu](docs/screenshots/user_menu.gif)
+
+---
+
+### Timezone Settings
+
+Click the globe icon in the sidebar footer to open the timezone picker. Your preference is saved and applied to all timestamp displays.
+
+![Timezone settings](docs/screenshots/settings.gif)
+
+---
+
+### AI Memory — Per-User Persistent
+
+The agent maintains a **per-user** `AGENTS.md` file shared across all threads. Before every LLM call, `memoryMiddleware` injects it as `<agent_memory>` in the system prompt. The agent updates the file with `write_file` when it learns something worth remembering (name, preferences, instructions, feedback patterns).
+
+The file is auto-created with a default header if it doesn't exist — no manual setup required. Large memory files (>32 K chars) are previewed; the agent is instructed to `read_file` the full file before overwriting.
+
+---
+
+### Skills — PDF, DOCX, XLSX, PPTX, CSV
+
+The agent can generate downloadable files using built-in skills:
+
+| Skill | Trigger | Output |
+|-------|---------|--------|
+| PDF | "generate a PDF report" | `.pdf` download |
+| DOCX | "export to Word" | `.docx` download |
+| XLSX | "create a spreadsheet" | `.xlsx` download |
+| PPTX | "make a PowerPoint" | `.pptx` download |
+| CSV | "export as CSV" | `.csv` download |
+
+Skills call `write_file` to create the binary, then `create_artifact` with `type: "file"` to show a download chip in the artifact panel.
+
+---
+
+### Tool Cards — All Agent Tools
+
+Every tool call renders as an expandable inline card that starts in loading state on `tool_start` and resolves on `tool_end`. Collapsed by default — click to expand.
+
+| Tool card | Shows |
+|---|---|
+| `think` | Internal reasoning scratchpad |
+| `web_search` | Query + result snippets |
+| `write_file` | Path + content written |
+| `read_file` | Path + content read |
+| `edit_file` | Path + diff-style edits |
+| `search_files` | Pattern + matching lines |
+| `extract_document` | File name + extracted text |
+| `create_artifact` | Type + title (link to panel) |
+| `run_nodejs_script` | Script + stdout/stderr |
+| `run_python_script` | Script + stdout/stderr |
+
+---
+
+### Agent Intelligence
+
+- **Persistent todo list** — `todoListMiddleware` gives the agent a structured checklist that survives between model calls within the same run, so complex multi-step tasks are tracked reliably.
+- **Model fallback** — if the primary LLM call fails (rate-limit, provider error), `modelFallbackMiddleware` retries with `gpt-4o-mini` automatically.
+- **Tool output chunking** — results larger than ~20 000 tokens are saved to a file; the agent receives a reference, preventing context overflow.
+- **Message trimming** — oldest messages are dropped when the conversation exceeds ~80 000 tokens, keeping at least the last 3 human turns.
+- **Context editing** — old tool-use turns are cleared (`[cleared]`) when context exceeds 100 000 tokens, preserving the last 5 messages.
+
+---
+
+### Copy Button
+
+Hover over any message bubble to reveal the **Copy** button. Clicking copies the raw text to clipboard and shows a 2-second checkmark animation.
+
+---
+
+### Markdown Rendering
+
+Full GFM in every assistant message: tables, task lists, code fences with syntax highlighting, blockquotes, and inline formatting.
+
+---
+
+### Scroll-to-Bottom FAB
+
+When the user scrolls more than 200 px above the latest message, a floating action button appears in the bottom-right corner to jump back instantly.
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- Node.js >= 22
-- pnpm >= 9 (`npm i -g pnpm`)
-- Backend running at http://localhost:3001
+- Node.js ≥ 22
+- pnpm ≥ 9 (`npm i -g pnpm`)
+- Backend running at `http://localhost:3001`
 
 ### Steps
 
@@ -299,16 +296,14 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 cd fe
 pnpm install
 
-# Development  Turbopack hot reload
+# Development — Turbopack hot reload
 pnpm dev
+# Open http://localhost:3000
 ```
-
-App available at **http://localhost:3000**
 
 ```bash
 # Production build
-pnpm build
-pnpm start
+pnpm build && pnpm start
 ```
 
 ---
@@ -317,19 +312,30 @@ pnpm start
 
 ### Full stack (recommended)
 
-Run from the **repo root** starts PostgreSQL, Redis, backend, and frontend together:
+Run from the **repo root** — starts PostgreSQL, Redis, backend, frontend, and nginx together:
 
 ```bash
 # 1. Prepare backend env
 cp .env.example be/.env
-# Edit be/.env with your secrets
+# Edit be/.env with your API keys and secrets
 
-# 2. Build and start all 4 services
+# 2. Build and start all services
 docker compose up -d --build
 
 # 3. Open the app
-open http://localhost:3000   # macOS / Linux
-start http://localhost:3000  # Windows
+open http://localhost     # macOS / Linux
+start http://localhost    # Windows
+```
+
+Nginx on `:80` routes:
+- `/api/v1/*` → NestJS backend `:3001`
+- `/*` → Next.js frontend `:3000`
+
+### Production compose
+
+```bash
+# External DB + Redis, no exposed FE/BE ports
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
 ### Frontend-only Docker build
@@ -343,24 +349,24 @@ docker run -p 3000:3000 \
   kairo-fe
 ```
 
-The FE image uses Next.js `output: 'standalone'` the runner stage is ~120 MB (vs ~1 GB for a full install image).
+The FE image uses Next.js `output: 'standalone'` — runner stage is ~120 MB.
 
 ---
 
 ## Environment Variables
 
-The frontend uses **no client-side secrets**. All backend communication goes through the Next.js BFF proxy route (`/api/proxy/[...path]`), which injects the `Authorization` header server-side.
+The frontend has **no client-side secrets**. All backend communication goes through the Next.js BFF proxy route `/api/proxy/[...path]` which injects `Authorization` headers server-side.
 
 ```env
-#  Server-side only (BFF)
-API_INTERNAL_URL=http://localhost:3001   # backend URL reachable from Next.js server
-                                        # In Docker: http://app:3001 (service name)
+# Server-side only (BFF)
+API_INTERNAL_URL=http://localhost:3001     # backend URL from Next.js server
+                                          # In Docker: http://app:3001
 
-#  Build-time / public
-NEXT_PUBLIC_SITE_URL=http://localhost:3000  # used for SSR absolute URL construction
+# Build-time / public
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-> **No API keys in the frontend.** The JWT is stored in `httpOnly` cookies. The BFF reads the cookie and adds `Authorization: Bearer <token>` on each proxied request.
+> **No API keys in the frontend.** JWT is stored in `httpOnly` cookies. The BFF reads the cookie and adds `Authorization: Bearer <token>` on each proxied request.
 
 ---
 
@@ -372,70 +378,55 @@ Every API call from the browser goes through `src/app/api/proxy/[...path]/route.
 
 ```
 Browser fetch('/api/proxy/threads')
-   Next.js Route Handler
-      reads httpOnly cookie  adds Authorization header
-      forwards to API_INTERNAL_URL/api/v1/threads
-      handles 401  auto-refresh token
-      returns response to browser
+   → Next.js Route Handler
+       reads httpOnly cookie → adds Authorization header
+       forwards to API_INTERNAL_URL/api/v1/threads
+       handles 401 → auto-refresh token
+       returns response to browser
 ```
 
-This means:
-
-- Zero CORS issues (same-origin requests from browser to Next.js)
+Benefits:
+- Zero CORS issues (same-origin requests)
 - JWT never accessible to JavaScript (XSS-safe)
-- Token refresh is transparent (user never sees a 401 error)
+- Token refresh is transparent to the user
 
 ### SSE Streaming
 
-`useStream` hook (`features/chat/hooks/use-stream.ts`) opens a streaming `fetch()`:
+`useStream` hook opens a streaming `fetch()`:
 
 ```
 POST /api/proxy/chat/send { message, stream: true }
-   BFF proxies to NestJS, forces status 200 for SSE
-    (fix for ERR_INCOMPLETE_CHUNKED_ENCODING on 201/202 responses)
-   ReadableStream reader loop
-       parse line-delimited SSE frames
-       dispatch to Zustand chat store actions
+ → BFF proxies to NestJS, forces status 200 for SSE
+ → ReadableStream reader loop
+     parse line-delimited SSE frames
+     dispatch to Zustand chat store
 ```
 
 SSE event types handled:
 
-| Event                     | Action                                                                                                            |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `ping`                    | Ignored (Redis Stream seed event)                                                                                 |
-| `meta`                    | Set `confirmedThreadId`; if `title` present → `setQueriesData` patches thread cache in-memory (zero network cost) |
-| `content_block_start`     | Add tool card or think card                                                                                       |
-| `content_block_delta`     | Append token / thinking delta / tool input JSON                                                                   |
-| `content_block_stop`      | Resolve tool card with output                                                                                     |
-| `streaming_complete`      | LLM done, DB write in progress → `setSavingStatus()` unlocks input, shows "Saving…" indicator                     |
-| `message_stop`            | Navigate new thread; `invalidateQueries(messages).then(finalizeStream)` swaps bubble; refresh sidebar             |
-| `token`                   | Append token to streaming bubble                                                                                  |
-| `tool_start` / `tool_end` | Legacy tool card lifecycle                                                                                        |
-| `artifact`                | Open artifact panel                                                                                               |
-| `error`                   | Set stream error state                                                                                            |
-| `[DONE]`                  | No-op safety fence (all finalization moved to `message_stop`)                                                     |
-| `done`                    | Dead path — `toKairoEvents` consumes this internally; kept as no-op                                               |
-
-#### Streaming status transitions
-
-```
-idle → streaming (startStream)
-         ↓ streaming_complete
-       saving (setSavingStatus) ← input unlocked, "Saving…" shown
-         ↓ invalidateQueries(messages) resolves
-       idle (finalizeStream) ← StreamingBubble → MessageBubble swap
-```
+| Event | Action |
+|---|---|
+| `ping` | Ignored (Redis Stream seed) |
+| `meta` | Set `confirmedThreadId`; patch thread title in cache |
+| `content_block_start` | Add tool/think card |
+| `content_block_delta` | Append token/thinking/tool input JSON |
+| `content_block_stop` | Resolve tool card with output |
+| `streaming_complete` | Unlock input, show "Saving…" |
+| `message_stop` | Navigate new thread; invalidate queries; finalize |
+| `token` | Append token to streaming bubble |
+| `artifact` | Open artifact panel |
+| `error` | Set stream error state |
 
 ### State Management
 
-| Store               | Responsibility                                                                                                 |
-| ------------------- | -------------------------------------------------------------------------------------------------------------- |
-| `chat-store.ts`     | Streaming state (`idle`/`streaming`/`saving`/`error`), optimistic messages, tool events, artifacts-in-progress |
-| `model-store.ts`    | Selected LLM provider + model, persisted to `localStorage`                                                     |
-| `ui-store.ts`       | Sidebar collapsed, artifact panel open, web search toggle                                                      |
-| `artifact-store.ts` | Completed artifacts list, active artifact ID                                                                   |
+| Store | Responsibility |
+|---|---|
+| `chat-store.ts` | Streaming state, optimistic messages, tool events, in-progress artifacts |
+| `model-store.ts` | Selected LLM provider + model (persisted to `localStorage`) |
+| `ui-store.ts` | Sidebar open/closed, artifact panel, web search toggle |
+| `artifact-store.ts` | Completed artifacts map, active artifact ID, panel open |
 
-TanStack Query manages all server state (threads list, messages, files). Zustand manages client-only UI state.
+TanStack Query manages server state (threads, messages, files). Zustand manages client-only UI state.
 
 ---
 
@@ -448,21 +439,25 @@ pnpm test:cov        # coverage report
 pnpm test:ui         # Vitest browser UI
 ```
 
-| Test file                              | What it covers                                                |
-| -------------------------------------- | ------------------------------------------------------------- |
-| `ui-store.spec.ts`                     | All 9 Zustand store actions (sidebar, scroll, web search)     |
-| `api-client.spec.ts`                   | GET/POST/PATCH/DELETE, 204 empty response, SSE stream, upload |
-| `login-schema.spec.ts`                 | Zod login schema — valid/invalid email, password rules        |
-| `register-schema.spec.ts`              | Zod register + password confirm mismatch                      |
-| `copy-button.spec.tsx`                 | Clipboard API mock, success state animation                   |
-| `model-store.spec.ts`                  | Model selection, provider change, localStorage persistence    |
-| `chat-store.spec.ts`                   | Streaming state, tool events, abort, optimistic messages      |
-| `artifact-store.spec.ts`               | Artifact CRUD, active artifact selection                      |
-| `utils.spec.ts`                        | Utility function edge cases                                   |
-| `use-debounce.spec.ts`                 | Debounce hook timing                                          |
-| `use-click-outside.spec.ts`            | Click-outside hook ref detection                              |
-| `features/artifacts/constants.spec.ts` | Artifact type → renderer mapping                              |
-| **Total**                              | **148 tests across 12 files**                                 |
+| Test file | What it covers |
+|---|---|
+| `ui-store.spec.ts` | All Zustand store actions (sidebar, scroll, web search) |
+| `api-client.spec.ts` | GET/POST/PATCH/DELETE, 204 empty response, SSE stream, upload |
+| `login-schema.spec.ts` | Zod login schema — valid/invalid email, password rules |
+| `register-schema.spec.ts` | Zod register + password confirm mismatch |
+| `copy-button.spec.tsx` | Clipboard API mock, success state animation |
+| `model-store.spec.ts` | Model selection, provider change, localStorage persistence |
+| `chat-store.spec.ts` | Streaming state, tool events, abort, optimistic messages |
+| `artifact-store.spec.ts` | Artifact CRUD, active artifact selection, version merge |
+| `utils.spec.ts` | Utility function edge cases |
+| `use-debounce.spec.ts` | Debounce hook timing |
+| `use-click-outside.spec.ts` | Click-outside hook ref detection |
+| `sidebar-item.spec.tsx` | Thread rename, delete confirmation, clone |
+| `user-menu.spec.tsx` | Sign out button text label and logout flow |
+| `artifact-toolbar.spec.tsx` | Version navigation, copy, download |
+| `features/artifacts/constants.spec.ts` | Artifact type → renderer mapping |
+| `use-stream.spec.ts` | SSE event parsing, streaming lifecycle |
+| **Total** | **188 tests across 16 files** |
 
 ---
 
@@ -470,77 +465,67 @@ pnpm test:ui         # Vitest browser UI
 
 ```
 fe/
- src/
-    app/                          # Next.js App Router
-       (auth)/
-          login/page.tsx
-          register/page.tsx
-       threads/
-          [threadId]/page.tsx    # Thread view
-       page.tsx                   # Root  redirect to /threads
-       api/
-           proxy/[...path]/route.ts # BFF proxy (JWT injection)
-           auth/                    # Login/register/refresh/logout
-    components/
-       ui/                       # Radix UI primitives (Button, Dialog, etc.)
-       chat/
-          message-bubble.tsx
-          tool-card.tsx
-          chat-input.tsx
-          copy-button.tsx
-          scroll-to-bottom-fab.tsx
-       artifact/
-          artifact-panel.tsx    # Side panel container
-          artifact-renderer.tsx # html/mermaid/code/markdown/svg
-       sidebar/
-           sidebar.tsx
-           thread-item.tsx        # Hover actions (rename/clone/delete)
-           search-modal.tsx       # Ctrl+K search
-    features/
-       auth/                     # Auth forms, schemas, API
-       chat/
-          hooks/use-stream.ts   # SSE streaming loop
-          hooks/use-messages.ts # Cursor-paginated message list
-          hooks/use-models.ts   # 183+ model list
-       threads/                  # Thread CRUD hooks
-       files/                    # Upload, list, download hooks
-    stores/
-       chat-store.ts             # Streaming + optimistic message state
-       model-store.ts            # LLM selection (localStorage)
-       ui-store.ts               # Sidebar, artifact panel, scroll
-       artifact-store.ts         # Completed artifacts
-    lib/
-       api-client.ts             # Typed fetch, envelope unwrap, SSE stream
-    types/                        # thread.ts, message.ts, artifact.ts
- docs/
-    screenshots/                  # PNG screenshots (per test-case)
-    round-1.gif  round-10.gif   # Animated GIFs — auth, streaming, tools, artifacts, upload, threads, memory, scroll, model selector, session
-    starting-screen-chips.gif    # Starting screen & suggestion chips
-    artifact-mermaid.gif          # Mermaid diagram artifact
-    artifact-drawio.gif           # Draw.io diagram artifact
-    skill-pdf.gif                 # PDF skill execution
-    skill-pptx.gif                # PPTX skill execution
-    skill-docx.gif                # DOCX skill execution
-    skill-xlsx.gif                # XLSX skill execution
-    skill-csv.gif                 # CSV skill execution
- public/
- Dockerfile
- next.config.ts                # output: standalone, BFF rewrites
- tsconfig.json
- vitest.config.ts
+├── src/
+│   ├── app/                            # Next.js App Router
+│   │   ├── (auth)/
+│   │   │   ├── login/page.tsx
+│   │   │   └── register/page.tsx
+│   │   ├── (chat)/
+│   │   │   ├── layout.tsx             # Sidebar + ArtifactPanel + SearchModal
+│   │   │   └── threads/
+│   │   │       ├── page.tsx           # New-chat welcome screen
+│   │   │       └── [threadId]/page.tsx
+│   │   ├── api/
+│   │   │   ├── proxy/[...path]/route.ts  # BFF proxy (JWT injection, refresh)
+│   │   │   └── auth/                     # login / register / refresh / logout
+│   │   └── page.tsx                   # Root → redirect to /threads
+│   ├── components/
+│   │   ├── ui/                        # Radix UI primitives
+│   │   └── error-boundary.tsx
+│   ├── features/
+│   │   ├── auth/                      # Forms, schemas, API hooks
+│   │   ├── chat/
+│   │   │   ├── components/            # MessageBubble, StreamingBubble, ChatInput, ToolCard, ThinkCard
+│   │   │   └── hooks/
+│   │   │       ├── use-stream.ts      # SSE streaming loop
+│   │   │       ├── use-messages.ts    # Paginated message list
+│   │   │       └── use-models.ts      # 183+ model list
+│   │   ├── threads/
+│   │   │   ├── components/            # Sidebar, SidebarItem, SearchModal, UserMenu
+│   │   │   └── hooks/                 # useThreads, useUpdateThread, useDeleteThread, useCloneThread
+│   │   ├── artifacts/
+│   │   │   ├── components/            # ArtifactPanel, ArtifactToolbar, ArtifactRenderer
+│   │   │   └── api/artifacts-api.ts
+│   │   └── files/                     # Upload, list, download hooks, FilePanel
+│   ├── stores/
+│   │   ├── chat-store.ts
+│   │   ├── model-store.ts
+│   │   ├── ui-store.ts
+│   │   └── artifact-store.ts
+│   ├── lib/
+│   │   ├── api-client.ts              # Typed fetch, envelope unwrap, SSE stream
+│   │   └── hooks/                     # useDebounce, useClickOutside
+│   └── types/                         # Thread, Message, Artifact, File types
+├── docs/
+│   └── screenshots/                   # PNGs + animated GIFs (one per feature)
+├── public/
+├── Dockerfile
+├── next.config.ts                     # output: standalone, proxy rewrites
+├── tsconfig.json
+└── vitest.config.ts
 ```
 
 ---
 
 ## Key Routes
 
-| Route                  | Description                                                   |
-| ---------------------- | ------------------------------------------------------------- |
-| `/login`               | Login form. Redirects to `/threads` if already authenticated. |
-| `/register`            | Registration form.                                            |
-| `/threads`             | Thread list (redirects to welcome screen if no threads).      |
-| `/threads/:id`         | Active thread messages, streaming, artifact panel.            |
-| `/api/proxy/[...path]` | BFF proxy route injects JWT, handles refresh.                 |
-| `/api/auth/login`      | Sets httpOnly cookies on successful login.                    |
-| `/api/auth/refresh`    | Refreshes access token using refresh cookie.                  |
-| `/api/auth/logout`     | Clears cookies.                                               |
+| Route | Description |
+|---|---|
+| `/login` | Login form. Redirects to `/threads` if already authenticated. |
+| `/register` | Registration form. |
+| `/threads` | New-chat welcome screen (or thread list in sidebar). |
+| `/threads/:id` | Active thread — messages, streaming, artifact panel. |
+| `/api/proxy/[...path]` | BFF proxy — injects JWT, handles token refresh. |
+| `/api/auth/login` | Sets httpOnly cookies on successful login. |
+| `/api/auth/refresh` | Refreshes access token using refresh cookie. |
+| `/api/auth/logout` | Clears auth cookies. |

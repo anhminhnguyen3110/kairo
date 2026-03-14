@@ -167,6 +167,49 @@ export async function createSseStream(
   return stream.getReader();
 }
 
+export interface ResumeRequestBody {
+  threadId: number;
+  sessionId?: string;
+  provider?: string;
+  model?: string;
+}
+
+export async function createResumeStream(
+  body: ResumeRequestBody,
+  signal: AbortSignal,
+): Promise<ReadableStreamDefaultReader<string>> {
+  const response = await fetch(`${getBffBase()}/api/proxy/chat/resume`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    body: JSON.stringify(body),
+    credentials: 'include',
+    signal,
+  });
+
+  if (!response.ok || !response.body) {
+    throw new ApiClientError(response.status, 'Resume stream request failed');
+  }
+
+  const decoder = new TextDecoder();
+  const reader = response.body.getReader();
+
+  const stream = new ReadableStream<string>({
+    async pull(controller) {
+      const { done, value } = await reader.read();
+      if (done) {
+        controller.close();
+        return;
+      }
+      controller.enqueue(decoder.decode(value, { stream: true }));
+    },
+    cancel() {
+      reader.cancel();
+    },
+  });
+
+  return stream.getReader();
+}
+
 export async function abortSseStream(sessionId: string): Promise<void> {
   await fetch(`${getBffBase()}/api/proxy/chat/abort`, {
     method: 'POST',

@@ -305,7 +305,7 @@ describe('useChatStore', () => {
       expect(spy).toHaveBeenCalledOnce();
     });
 
-    it('resets streamingStatus to idle and clears streamingContent', () => {
+    it('sets streamingStatus to aborted and preserves streamingContent', () => {
       const ac = new AbortController();
       useChatStore.setState({
         abortController: ac as unknown as null,
@@ -314,16 +314,16 @@ describe('useChatStore', () => {
       });
       useChatStore.getState().abortStream();
       const s = useChatStore.getState();
-      expect(s.streamingStatus).toBe('idle');
-      expect(s.streamingContent).toBe('');
+      expect(s.streamingStatus).toBe('aborted');
+      expect(s.streamingContent).toBe('partial');
       expect(s.abortController).toBeNull();
     });
 
-    it('handles missing abortController gracefully (no-op abort, still resets state)', () => {
+    it('handles missing abortController gracefully (no-op abort, still sets aborted)', () => {
       useChatStore.setState({ abortController: null, streamingContent: 'partial' });
       expect(() => useChatStore.getState().abortStream()).not.toThrow();
-      expect(useChatStore.getState().streamingStatus).toBe('idle');
-      expect(useChatStore.getState().streamingContent).toBe('');
+      expect(useChatStore.getState().streamingStatus).toBe('aborted');
+      expect(useChatStore.getState().streamingContent).toBe('partial');
     });
   });
 });

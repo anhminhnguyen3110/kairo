@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { PanelLeft, Plus, Search } from 'lucide-react';
 import { groupThreadsByTimeFrame, TIME_FRAME_LABELS, TIME_FRAME_ORDER } from '@/lib/utils';
@@ -19,10 +19,10 @@ export function Sidebar() {
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useThreads();
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
     const handle = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
-    handle(mq); // run immediately on mount
+    handle(mq); // run immediately before paint to prevent flash
     mq.addEventListener('change', handle as (e: MediaQueryListEvent) => void);
     return () => mq.removeEventListener('change', handle as (e: MediaQueryListEvent) => void);
   }, [setIsMobile]);

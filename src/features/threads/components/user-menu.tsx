@@ -66,9 +66,10 @@ export function UserMenu({ collapsed = false }: { collapsed?: boolean }) {
                 onClick={handleLogout}
                 disabled={isLoggingOut}
                 title="Sign out"
-                className="p-1 rounded hover:bg-sidebar-hover transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-1.5 py-1 rounded hover:bg-sidebar-hover transition-colors disabled:opacity-50 text-sidebar-muted hover:text-sidebar-text"
               >
-                <LogOut className="w-3.5 h-3.5 text-sidebar-muted hover:text-sidebar-text transition-colors shrink-0" />
+                <LogOut className="w-3.5 h-3.5 shrink-0" />
+                <span className="text-[11px] whitespace-nowrap">Sign out</span>
               </button>
             </>
           )}

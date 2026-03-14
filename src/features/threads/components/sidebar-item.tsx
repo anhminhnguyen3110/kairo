@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { MoreHorizontal, Pencil, Trash2, Copy, Check, X } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, Copy, Check, X, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Thread } from '@/types';
 import { useUpdateThread, useDeleteThread, useCloneThread } from '../hooks/use-threads';
@@ -21,6 +21,7 @@ export function SidebarItem({ thread }: SidebarItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(thread.title);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +44,10 @@ export function SidebarItem({ thread }: SidebarItemProps) {
 
   useClickOutside(
     menuRef,
-    useCallback(() => setMenuOpen(false), []),
+    useCallback(() => {
+      setMenuOpen(false);
+      setConfirmingDelete(false);
+    }, []),
   );
 
   const handleRenameSubmit = () => {
@@ -134,6 +138,7 @@ export function SidebarItem({ thread }: SidebarItemProps) {
           onClick={(e) => {
             e.preventDefault();
             setMenuOpen((v) => !v);
+            setConfirmingDelete(false);
           }}
           className="p-1 rounded text-sidebar-muted hover:text-sidebar-text hover:bg-[#35322A] transition-colors"
           title="More options"
@@ -150,41 +155,72 @@ export function SidebarItem({ thread }: SidebarItemProps) {
                      bg-[#252220] border border-[#3A3632] rounded-xl shadow-2xl
                      overflow-hidden py-1"
         >
-          <button
-            onClick={() => {
-              setIsRenaming(true);
-              setMenuOpen(false);
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px]
-                       text-sidebar-text hover:bg-sidebar-hover transition-colors"
-          >
-            <Pencil className="w-3.5 h-3.5 text-sidebar-muted shrink-0" />
-            Rename
-          </button>
-          <button
-            onClick={() => {
-              cloneThread({ id: thread.id });
-              setMenuOpen(false);
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px]
-                       text-sidebar-text hover:bg-sidebar-hover transition-colors"
-          >
-            <Copy className="w-3.5 h-3.5 text-sidebar-muted shrink-0" />
-            Clone
-          </button>
-          <div className="my-1 mx-2 border-t border-[#3A3632]" />
-          <button
-            onClick={() => {
-              if (isActive) router.push('/threads');
-              deleteThread(thread.id);
-              setMenuOpen(false);
-            }}
-            className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px]
-                       text-red-400/90 hover:bg-sidebar-hover hover:text-red-400 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5 shrink-0" />
-            Delete
-          </button>
+          {!confirmingDelete ? (
+            <>
+              <button
+                onClick={() => {
+                  setIsRenaming(true);
+                  setMenuOpen(false);
+                }}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px]
+                           text-sidebar-text hover:bg-sidebar-hover transition-colors"
+              >
+                <Pencil className="w-3.5 h-3.5 text-sidebar-muted shrink-0" />
+                Rename
+              </button>
+              <button
+                onClick={() => {
+                  cloneThread({ id: thread.id });
+                  setMenuOpen(false);
+                }}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px]
+                           text-sidebar-text hover:bg-sidebar-hover transition-colors"
+              >
+                <Copy className="w-3.5 h-3.5 text-sidebar-muted shrink-0" />
+                Clone
+              </button>
+              <div className="my-1 mx-2 border-t border-[#3A3632]" />
+              <button
+                onClick={() => setConfirmingDelete(true)}
+                className="flex items-center gap-2.5 w-full px-3 py-2 text-[13px]
+                           text-red-400/90 hover:bg-sidebar-hover hover:text-red-400 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5 shrink-0" />
+                Delete
+              </button>
+            </>
+          ) : (
+            <div className="px-3 py-2">
+              <div className="flex items-center gap-1.5 mb-2">
+                <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0" />
+                <span className="text-[12px] text-red-400 font-medium">Delete thread?</span>
+              </div>
+              <p className="text-[11px] text-sidebar-muted mb-3 leading-snug">
+                This cannot be undone.
+              </p>
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => {
+                    if (isActive) router.push('/threads');
+                    deleteThread(thread.id);
+                    setMenuOpen(false);
+                    setConfirmingDelete(false);
+                  }}
+                  className="flex-1 px-2 py-1 text-[12px] rounded-md bg-red-500/20 text-red-400
+                             border border-red-500/30 hover:bg-red-500/30 transition-colors font-medium"
+                >
+                  Delete
+                </button>
+                <button
+                  onClick={() => setConfirmingDelete(false)}
+                  className="flex-1 px-2 py-1 text-[12px] rounded-md bg-[#35322A] text-sidebar-text
+                             border border-[#4A4540] hover:bg-sidebar-hover transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

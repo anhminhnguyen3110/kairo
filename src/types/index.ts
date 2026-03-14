@@ -66,6 +66,7 @@ export interface Message {
   updatedAt: string;
 
   artifacts?: Artifact[];
+  partial?: boolean;
 }
 
 export interface FileAttachment {
@@ -87,6 +88,8 @@ export interface Artifact {
   content: string;
   language?: string;
   messageId: number;
+  version?: number;
+  parentId?: string | null;
 }
 
 export interface AttachmentMeta {

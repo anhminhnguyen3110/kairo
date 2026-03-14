@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import {
@@ -111,6 +112,7 @@ async function forwardToBe(
   const init: RequestInit = {
     method: request.method,
     headers,
+    cache: 'no-store',
   };
 
   if (!['GET', 'HEAD'].includes(request.method)) {

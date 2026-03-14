@@ -10,29 +10,21 @@ import { cn } from '@/lib/utils';
 import { CopyButton } from '@/components/copy-button';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 
-/**
- * Normalize LaTeX delimiters produced by various LLM providers into the
- * `$$...$$` / `$...$` syntax that remark-math v6 understands.
- *   \[...\]  →  $$\n...\n$$   (display math)
- *   \(...\)  →  $...$          (inline math)
- *   [...] containing \-commands  →  $$\n...\n$$   (bare bracket display math)
- */
-function preprocessLaTeX(content: string): string {
-  // Display math: \[ ... \] → $$\n...\n$$
+function preprocessContent(content: string): string {
   let result = content.replace(/\\\[([\s\S]*?)\\\]/g, (_match, math: string) => {
     return `$$\n${math.trim()}\n$$`;
   });
-  // Inline math: \( ... \) → $...$
   result = result.replace(/\\\(([\s\S]*?)\\\)/g, (_match, math: string) => {
     return `$${math.trim()}$`;
   });
-  // Bare display math: [...] blocks that contain at least one LaTeX \-command → $$\n...\n$$
-  // Guard: only match when content has a backslash-letter sequence (\frac, \sqrt, etc.)
-  // to avoid converting regular markdown links [text](url) or footnotes.
   result = result.replace(/\[([^\[\]]*?\\[a-zA-Z][^\[\]]*?)\]/g, (_match, math: string) => {
     return `$$\n${math.trim()}\n$$`;
   });
+
+  result = result.replace(/&lt;br\s*\/?[&]*gt;/gi, '\n\n');
+  result = result.replace(/<br\s*\/?>/gi, '\n\n');
   return result;
 }
 
@@ -185,10 +177,10 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
     <div className={cn('text-sm text-[#ECECEC]', className)}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm, remarkMath]}
-        rehypePlugins={[rehypeKatex]}
+        rehypePlugins={[rehypeRaw, rehypeKatex]}
         components={markdownComponents}
       >
-        {preprocessLaTeX(content)}
+        {preprocessContent(content)}
       </ReactMarkdown>
     </div>
   );

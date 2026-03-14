@@ -1,6 +1,17 @@
 'use client';
 
-import { Copy, Download, X, Eye, Code2, RefreshCw, ChevronDown, Check } from 'lucide-react';
+import {
+  Copy,
+  Download,
+  X,
+  Eye,
+  Code2,
+  RefreshCw,
+  ChevronDown,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Artifact } from '@/types';
 import { useArtifactStore } from '@/stores/artifact-store';
@@ -17,19 +28,50 @@ interface ArtifactToolbarProps {
   onRefresh?: () => void;
 }
 
+function buildVersionChain(artifact: Artifact, artifacts: Record<string, Artifact>): Artifact[] {
+  const all = Object.values(artifacts) as Artifact[];
+
+  const findRoot = (art: Artifact): Artifact => {
+    if (!art.parentId) return art;
+    const parent = artifacts[art.parentId];
+    if (!parent) return art;
+    return findRoot(parent);
+  };
+
+  const root = findRoot(artifact);
+  const chain: Artifact[] = [root];
+
+  let current = root;
+  for (;;) {
+    const next = all.find((a) => a.parentId === current.id);
+    if (!next) break;
+    chain.push(next);
+    current = next;
+  }
+
+  return chain;
+}
+
 export function ArtifactToolbar({
   artifact,
   viewMode,
   onViewModeChange,
   onRefresh,
 }: ArtifactToolbarProps) {
-  const { closePanel } = useArtifactStore();
+  const { closePanel, openArtifact, artifacts } = useArtifactStore();
   const [copied, setCopied] = useState(false);
   const [copyMenuOpen, setCopyMenuOpen] = useState(false);
 
   const numericId = Number(artifact.id);
   const isPersistedArtifact = !isNaN(numericId) && numericId > 0;
   const downloadUrl = isPersistedArtifact ? artifactsApi.getDownloadUrl(numericId) : null;
+
+  // Version chain navigation
+  const versionChain = buildVersionChain(artifact, artifacts);
+  const currentVersionIdx = versionChain.findIndex((a) => a.id === artifact.id);
+  const totalVersions = versionChain.length;
+  const hasPrev = currentVersionIdx > 0;
+  const hasNext = currentVersionIdx < totalVersions - 1;
 
   const handleCopyContent = useCallback(async () => {
     await navigator.clipboard.writeText(artifact.content ?? '');
@@ -119,6 +161,38 @@ export function ArtifactToolbar({
         {artifact.title ?? 'Artifact'}
       </span>
       <span className="shrink-0 text-sm text-stone-500">· {typeLabel}</span>
+
+      {/* Version navigation — only shown when multiple versions exist */}
+      {totalVersions > 1 && (
+        <>
+          <div className="w-px h-4 bg-[#333333] mx-0.5" />
+          <div className="flex items-center gap-0.5">
+            <button
+              type="button"
+              onClick={() => openArtifact(versionChain[currentVersionIdx - 1].id)}
+              disabled={!hasPrev}
+              title="Previous version"
+              className="p-1 rounded-md text-stone-500 hover:text-stone-300 hover:bg-[#2A2A2A]
+                         transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft size={13} />
+            </button>
+            <span className="text-[11px] text-stone-500 tabular-nums px-0.5">
+              v{currentVersionIdx + 1}/{totalVersions}
+            </span>
+            <button
+              type="button"
+              onClick={() => openArtifact(versionChain[currentVersionIdx + 1].id)}
+              disabled={!hasNext}
+              title="Next version"
+              className="p-1 rounded-md text-stone-500 hover:text-stone-300 hover:bg-[#2A2A2A]
+                         transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <ChevronRight size={13} />
+            </button>
+          </div>
+        </>
+      )}
 
       <div className="w-px h-4 bg-[#333333] mx-0.5" />
 

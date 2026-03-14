@@ -58,7 +58,6 @@ export const useArtifactStore = create<ArtifactState>()(
 
     replaceArtifactsAndOpen: (artifacts, id) =>
       set((state) => {
-        state.artifacts = {};
         for (const artifact of artifacts) {
           state.artifacts[artifact.id] = artifact as unknown as Artifact;
         }

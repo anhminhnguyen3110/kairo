@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, File } from 'lucide-react';
+import { FileText, File, RotateCcw } from 'lucide-react';
 import { MarkdownRenderer } from './markdown-renderer';
 import { cn, formatBytes, fileExt } from '@/lib/utils';
 import type { Message, ToolCall, AttachmentMeta } from '@/types';
@@ -73,12 +73,15 @@ function AttachmentCard({ attachment }: { attachment: AttachmentMeta }) {
 
 interface MessageBubbleProps {
   message: Message;
+  isLastMessage?: boolean;
+  onResume?: () => void;
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, isLastMessage, onResume }: MessageBubbleProps) {
   const isUser = message.role === 'USER';
   const isAssistant = message.role === 'ASSISTANT';
   const fileAttachmentsByKey = useChatStore((s) => s.fileAttachmentsByKey);
+  const streamingStatus = useChatStore((s) => s.streamingStatus);
 
   if (isUser) {
     const metaAttachments = message.metadata?.attachments as AttachmentMeta[] | undefined;
@@ -153,6 +156,17 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           <div className="flex items-center gap-1 mt-1 opacity-0 group-hover/msg:opacity-100 transition-opacity duration-150">
             <CopyButton content={message.content} showLabel={false} />
           </div>
+        )}
+        {message.partial && isLastMessage && onResume && streamingStatus === 'idle' && (
+          <button
+            type="button"
+            onClick={onResume}
+            className="mt-2 flex items-center gap-1.5 text-[12px] text-stone-400 hover:text-stone-200
+                       border border-stone-700 rounded-lg px-3 py-1.5 transition-colors"
+          >
+            <RotateCcw size={12} />
+            Continue generation
+          </button>
         )}
       </div>
     );

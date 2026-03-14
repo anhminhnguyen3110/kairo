@@ -34,7 +34,7 @@ export function StreamingBubble() {
     );
   }
 
-  if (streamingStatus !== 'streaming' && streamingStatus !== 'saving') return null;
+  if (streamingStatus !== 'streaming' && streamingStatus !== 'saving' && streamingStatus !== 'aborted') return null;
 
   return (
     <div className="py-6">
@@ -56,14 +56,19 @@ export function StreamingBubble() {
             {streamingStatus === 'streaming' && (
               <span className="inline-block w-0.5 h-4 bg-[#CC785C] ml-0.5 animate-pulse" />
             )}
+            {streamingStatus === 'aborted' && (
+              <span className="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-stone-800 text-stone-400 align-middle">
+                Stopped
+              </span>
+            )}
           </>
-        ) : (
+        ) : streamingStatus !== 'aborted' ? (
           <span className="flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[#CC785C]/60 animate-bounce [animation-delay:0ms]" />
             <span className="w-1.5 h-1.5 rounded-full bg-[#CC785C]/60 animate-bounce [animation-delay:150ms]" />
             <span className="w-1.5 h-1.5 rounded-full bg-[#CC785C]/60 animate-bounce [animation-delay:300ms]" />
           </span>
-        )}
+        ) : null}
       </div>
 
       {streamingArtifacts.length > 0 && (

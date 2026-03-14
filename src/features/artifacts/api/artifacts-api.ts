@@ -12,6 +12,8 @@ function dtoToArtifact(dto: ArtifactDto): Artifact {
     content: dto.content,
     language: dto.language ?? undefined,
     messageId: dto.messageId ?? -1,
+    version: dto.version,
+    parentId: dto.parentId != null ? String(dto.parentId) : null,
   };
 }
 
