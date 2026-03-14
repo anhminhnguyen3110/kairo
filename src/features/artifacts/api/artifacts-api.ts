@@ -29,4 +29,8 @@ export const artifactsApi = {
   getDownloadUrl(artifactId: number): string {
     return `/api/proxy/artifacts/${artifactId}/download`;
   },
+
+  getPreviewPdfUrl(artifactId: number): string {
+    return `/api/proxy/artifacts/${artifactId}/preview-pdf`;
+  },
 };

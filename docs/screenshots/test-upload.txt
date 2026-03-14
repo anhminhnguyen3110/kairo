@@ -1,3 +1,0 @@
-This is a test file for R10 file upload testing.
-Hello from Kairo test suite!
-Line 3: Testing file upload functionality.

@@ -1,9 +1,21 @@
 'use client';
 
-import { useEffect, startTransition } from 'react';
+import { useEffect, useRef, startTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Pencil, Code2, Search, Lightbulb, Menu } from 'lucide-react';
-import { MessageInput } from '@/features/chat/components/message-input';
+import {
+  Menu,
+  Globe,
+  Sparkles,
+  Code2,
+  GitBranch,
+  Terminal,
+  FileText,
+  Lightbulb,
+  BookMarked,
+  type LucideIcon,
+} from 'lucide-react';
+import { MessageInput, type MessageInputHandle } from '@/features/chat/components/message-input';
+import { cn } from '@/lib/utils';
 import { MessageBubble } from './message-bubble';
 import { StreamingBubble } from './streaming-bubble';
 import { KairoLogo } from '@/components/kairo-logo';
@@ -12,16 +24,65 @@ import { useArtifactStore } from '@/stores/artifact-store';
 import { useMe, displayNameFromEmail } from '@/features/user/hooks/use-me';
 import { useUiStore } from '@/stores/ui-store';
 
-const SUGGESTIONS = [
-  { icon: Pencil, label: 'Write', prompt: 'Help me write ' },
-  { icon: Code2, label: 'Code', prompt: 'Write code to ' },
-  { icon: Lightbulb, label: 'Analyze', prompt: 'Analyze this: ' },
-  { icon: Search, label: 'Search', prompt: 'Search for information about ' },
+interface FeatureChip {
+  icon: LucideIcon;
+  label: string;
+  prompt: string;
+}
+
+const FEATURE_CHIPS: FeatureChip[] = [
+  {
+    icon: Globe,
+    label: 'Search the web',
+    prompt: 'Search the web for the latest AI news this week and give me a brief summary',
+  },
+  {
+    icon: Sparkles,
+    label: 'Create artifact',
+    prompt:
+      'Build me an interactive HTML page with a color-picker that updates the background in real time',
+  },
+  {
+    icon: Code2,
+    label: 'React component',
+    prompt:
+      'Build a React todo list with add, complete, and delete actions — show it live in the preview panel',
+  },
+  {
+    icon: GitBranch,
+    label: 'Draw a diagram',
+    prompt: 'Create a mermaid sequence diagram showing how a user logs in with JWT refresh tokens',
+  },
+  {
+    icon: Terminal,
+    label: 'Write code',
+    prompt:
+      'Write a Python script that generates a Fibonacci sequence and plots it as an SVG bar chart',
+  },
+  {
+    icon: FileText,
+    label: 'Analyze a file',
+    prompt:
+      "I'll upload a PDF — extract the key points and format them as a structured markdown summary",
+  },
+  {
+    icon: Lightbulb,
+    label: 'Think it through',
+    prompt:
+      'Think step by step: compare microservices vs monolith architecture and give me a decision framework',
+  },
+  {
+    icon: BookMarked,
+    label: 'Remember me',
+    prompt:
+      "Remember: I'm a senior full-stack engineer who prefers TypeScript, concise answers, and no fluff",
+  },
 ];
 
 export function NewChatContainer() {
   const router = useRouter();
-  const { optimisticMessages, clearOptimisticMessages } = useChatStore();
+  const inputRef = useRef<MessageInputHandle>(null);
+  const { optimisticMessages, clearOptimisticMessages, streamingStatus } = useChatStore();
   const { clearArtifacts } = useArtifactStore();
   const { data: me, isLoading: meLoading } = useMe();
   const displayName = !meLoading && me?.email ? displayNameFromEmail(me.email) : null;
@@ -33,7 +94,11 @@ export function NewChatContainer() {
 
   useEffect(() => {
     return () => {
-      clearOptimisticMessages();
+      // Skip when navigating to a newly-created thread — pendingMessage is set
+      // and the optimistic message should persist until send() picks it up.
+      if (!useChatStore.getState().pendingMessage) {
+        clearOptimisticMessages();
+      }
     };
   }, [clearOptimisticMessages]);
 
@@ -43,7 +108,7 @@ export function NewChatContainer() {
     });
   };
 
-  const hasActivity = optimisticMessages.length > 0;
+  const hasActivity = optimisticMessages.length > 0 || streamingStatus === 'error';
 
   return (
     <div className="flex flex-col h-full bg-chat-bg relative">
@@ -82,63 +147,49 @@ export function NewChatContainer() {
             </h1>
           </div>
 
-          <MessageInput onNewThread={handleNewThread} variant="centered" />
+          <MessageInput ref={inputRef} onNewThread={handleNewThread} variant="centered" />
 
-          <div className="flex items-center gap-2 mt-4 flex-wrap justify-center">
-            {SUGGESTIONS.map(({ icon: Icon, label, prompt }) => (
-              <SuggestionPill
-                key={label}
-                icon={<Icon size={13} />}
-                label={label}
-                prompt={prompt}
-                onNewThread={handleNewThread}
-              />
-            ))}
-          </div>
+          <FeatureChips
+            onSelect={(prompt) => inputRef.current?.submitWithPrompt(prompt)}
+            disabled={streamingStatus !== 'idle'}
+          />
         </div>
       )}
     </div>
   );
 }
 
-interface SuggestionPillProps {
-  icon: React.ReactNode;
-  label: string;
-  prompt: string;
-  onNewThread: (id: number) => void;
-}
-
-function SuggestionPill({ icon, label, prompt }: SuggestionPillProps) {
-  const handleClick = () => {
-    // Inject the starter prompt into the MessageInput textarea
-    const textarea = document.querySelector<HTMLTextAreaElement>('textarea');
-    if (textarea) {
-      // Use the native input setter so React state (onInput) picks up the change
-      const nativeSetter = Object.getOwnPropertyDescriptor(
-        window.HTMLTextAreaElement.prototype,
-        'value',
-      )?.set;
-      nativeSetter?.call(textarea, prompt);
-      textarea.dispatchEvent(new Event('input', { bubbles: true }));
-      textarea.focus();
-      // Move cursor to end
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    }
-  };
-
+function FeatureChips({
+  onSelect,
+  disabled,
+}: {
+  onSelect: (prompt: string) => void;
+  disabled: boolean;
+}) {
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className="
-        flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[13px]
-        bg-[#2A2724] border border-[#3A3632] text-stone-300
-        hover:bg-[#35322A] hover:border-[#4A4642] hover:text-stone-100
-        transition-colors select-none
-      "
-    >
-      <span className="text-stone-400">{icon}</span>
-      {label}
-    </button>
+    <div className="flex flex-wrap justify-center gap-2 mt-5 max-w-[560px] w-full">
+      {FEATURE_CHIPS.map((chip) => {
+        const Icon = chip.icon;
+        return (
+          <button
+            key={chip.label}
+            type="button"
+            disabled={disabled}
+            onClick={() => onSelect(chip.prompt)}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-full',
+              'bg-[#242220] border border-[#3A3632]',
+              'text-[12.5px] font-medium text-stone-400 select-none',
+              'hover:bg-[#2E2B28] hover:text-stone-200 hover:border-[#524E4A]',
+              'active:scale-95 transition-all duration-150 ease-out cursor-pointer',
+              disabled && 'opacity-40 cursor-not-allowed pointer-events-none',
+            )}
+          >
+            <Icon size={13} className="shrink-0" />
+            {chip.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

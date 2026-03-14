@@ -52,7 +52,7 @@ docker run -p 3000:3000 \
 ## Table of Contents
 
 1. [Features](#features)
-2. [Screenshots](#screenshots)
+2. [Demo](#demo)
 3. [Quick Start — Local](#quick-start--local)
 4. [Deploy with Docker](#deploy-with-docker)
 5. [Environment Variables](#environment-variables)
@@ -171,35 +171,21 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ---
 
-## Screenshots
+## Demo
 
 ### Authentication — Login & Register
-
-![Login page with form elements](docs/screenshots/r1-tc1-login-page-elements.png)
-
-![Wrong credentials error](docs/screenshots/r1-tc9-wrong-credentials-error.png)
-
-![After successful login — threads home](docs/screenshots/r1-tc8-login-success-threads.png)
 
 ![Authentication demo](docs/round-1.gif)
 
 ---
 
-![Register page with form elements](docs/screenshots/r2-tc1-register-page-elements.png)
+### Starting Screen & Suggestion Chips
 
-![Duplicate email error](docs/screenshots/r2-tc9-duplicate-email.png)
-
-![After successful registration — threads home](docs/screenshots/r2-tc8-register-success-threads.png)
+![Starting screen and suggestion chips](docs/starting-screen-chips.gif)
 
 ---
 
-### Streaming Chat — Token-by-Token
-
-![Message sent — streaming tokens](docs/screenshots/r7-tc1-tc2-message-sent-streaming.png)
-
-![Response complete — title auto-generated](docs/screenshots/r7-tc3-tc8-response-complete-title-updated.png)
-
-![Multi-turn conversation](docs/screenshots/r7-tc10-multi-turn-conversation.png)
+### Streaming Chat
 
 ![Streaming chat demo](docs/round-2.gif)
 
@@ -207,51 +193,59 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ### Tool Cards — Web Search & Think
 
-![Tools panel with web search toggle](docs/screenshots/r8-tc2-tools-panel.png)
-
-![Web search enabled](docs/screenshots/r8-tc2-web-search-enabled.png)
-
-![Web search executing — streaming](docs/screenshots/r8-tc3-web-search-streaming.png)
-
-![Web search results card](docs/screenshots/r8-tc3-tool-call-web-search-results.png)
-
-![Complete response with citations](docs/screenshots/r8-tc3-web-search-complete-response.png)
-
-![Tool cards collapsed — compact view](docs/screenshots/r8-tc6-tool-card-collapsed.png)
-
-![search_files tool card](docs/screenshots/r8-search-files-tool.png)
-
 ![Tool cards demo](docs/round-3.gif)
 
 ---
 
 ### Artifacts — Live HTML Preview & Code
 
-![Agent creating artifact](docs/screenshots/r9-tc1-artifact-creating.png)
-
-![Artifact panel — preview tab](docs/screenshots/r9-tc1-tc2-artifact-panel-preview.png)
-
-![Interactive artifact — counter example](docs/screenshots/r9-tc3-interactive-preview-counter.png)
-
-![Artifact source code tab](docs/screenshots/r9-tc4-artifact-source-code.png)
-
-![Python code artifact](docs/screenshots/r9-tc8-python-code-artifact.png)
-
-![Multiple artifacts](docs/screenshots/r9-tc10-multiple-artifacts.png)
-
 ![Artifacts demo](docs/round-4.gif)
 
 ---
 
+### Artifacts — Mermaid Diagrams
+
+![Mermaid artifact demo](docs/artifact-mermaid.gif)
+
+---
+
+### Artifacts — Draw.io Diagrams
+
+![Draw.io artifact demo](docs/artifact-drawio.gif)
+
+---
+
+### Skills — PDF Generation
+
+![PDF skill demo](docs/skill-pdf.gif)
+
+---
+
+### Skills — PowerPoint (PPTX)
+
+![PPTX skill demo](docs/skill-pptx.gif)
+
+---
+
+### Skills — Word (DOCX)
+
+![DOCX skill demo](docs/skill-docx.gif)
+
+---
+
+### Skills — Excel (XLSX)
+
+![XLSX skill demo](docs/skill-xlsx.gif)
+
+---
+
+### Skills — CSV Export
+
+![CSV skill demo](docs/skill-csv.gif)
+
+---
+
 ### File Upload & Document Understanding
-
-![Attach files dropdown](docs/screenshots/r10-tc1-attach-files-dropdown.png)
-
-![File chip attached in input bar](docs/screenshots/r10-tc2-tc3-file-attached-chip.png)
-
-![Upload result — extract_document tool card](docs/screenshots/r10-tc4-file-upload-result.png)
-
-![Files panel in thread header](docs/screenshots/r10-tc10-header-attach-files-panel.png)
 
 ![File upload demo](docs/round-5.gif)
 
@@ -259,102 +253,37 @@ The panel shows **Code** and **Preview** tabs. Artifacts are versioned — editi
 
 ### Thread Management — Rename, Clone, Delete
 
-![Thread hover menu](docs/screenshots/r5-tc1-thread-hover-menu.png)
-
-![Thread context menu](docs/screenshots/r5-tc2-thread-context-menu.png)
-
-![Rename inline input](docs/screenshots/r5-tc3-rename-input.png)
-
-![Rename confirmed](docs/screenshots/r5-tc4-rename-success.png)
-
-![Clone thread](docs/screenshots/r5-tc6-clone-thread.png)
-
-![Delete thread](docs/screenshots/r5-tc7-delete-thread.png)
-
 ![Thread management demo](docs/round-6.gif)
 
 ---
 
 ### Thread Search — Ctrl+K
 
-![Search modal open](docs/screenshots/r6-tc1-search-modal-open.png)
-
-![Search results highlighted](docs/screenshots/r6-tc5-search-results.png)
-
-![No results state](docs/screenshots/r6-tc6-no-results.png)
-
-![API-backed search results](docs/screenshots/r6-tc9-api-search-results.png)
+![Thread search demo](docs/round-6.gif)
 
 ---
 
 ### AI Memory — Per-User Persistent
 
-![Writing memory with write_file](docs/screenshots/r7-04-memory-written.png)
-
-![Memory confirmed in workspace](docs/screenshots/r7-05-memory-scroll-bottom.png)
-
-![Memory recalled in new thread](docs/screenshots/r7-08-memory-recalled.png)
-
 ![AI memory demo](docs/round-7.gif)
 
 ---
 
-### Session & Protected Routes
-
-![Unauthenticated redirect to login](docs/screenshots/r3-tc1-protected-redirect.png)
-
-![User avatar — first letter of email](docs/screenshots/r3-tc8-user-avatar.png)
-
-![Session persistence across page refresh](docs/screenshots/r3-tc5-tc6-tc7-tc8-tc9-tc10-session.png)
-
-![Cookie-based token refresh](docs/screenshots/r16-tc10-refresh-cookie-based.png)
-
-![Session persistence demo](docs/round-10.gif)
-
----
-
-### Model Selector — 183+ Models
-
-![Model selector dropdown](docs/screenshots/r11-tc1-model-selector-dropdown.png)
-
-![Model list expanded by provider](docs/screenshots/r11-tc2-model-list-expanded.png)
-
-![Search model — DeepSeek](docs/screenshots/r11-tc3-model-search-deepseek.png)
-
-![Model changed — DeepSeek selected](docs/screenshots/r11-tc4-model-changed-deepseek.png)
-
-![Model selector demo](docs/round-9.gif)
-
----
-
-### Scroll UX — Jump-to-Bottom FAB
-
-![Thread at bottom](docs/screenshots/r8-01-thread-bottom.png)
-
-![Scrolled up — FAB appears](docs/screenshots/r8-03-scroll-to-bottom-fab.png)
-
-![Back to bottom](docs/screenshots/r8-04-scrolled-to-bottom.png)
+### Scroll UX & Abort
 
 ![Scroll UX + abort demo](docs/round-8.gif)
 
 ---
 
-### Responsive Design
+### Model Selector — 183+ Models
 
-**Desktop — sidebar collapsed (icon-only strip)**
-![Sidebar collapsed — icon strip](docs/screenshots/r12-tc1-sidebar-collapsed.png)
+![Model selector demo](docs/round-9.gif)
 
-**Desktop — sidebar expanded**
-![Sidebar expanded](docs/screenshots/r12-tc3-sidebar-expanded.png)
+---
 
-**Mobile 375 px — full-width chat area**
-![Mobile 375px viewport](docs/screenshots/r12-tc6-mobile-375px-viewport.png)
+### Session & Protected Routes
 
-**Mobile — active thread**
-![Mobile thread view](docs/screenshots/r12-tc7-thread-mobile-view.png)
-
-**Tablet 768 px**
-![Tablet 768px viewport](docs/screenshots/r12-tc8-tablet-768px-viewport.png)
+![Session persistence demo](docs/round-10.gif)
 
 ## Quick Start — Local
 
@@ -584,8 +513,16 @@ fe/
        api-client.ts             # Typed fetch, envelope unwrap, SSE stream
     types/                        # thread.ts, message.ts, artifact.ts
  docs/
-    screenshots/                  # 100+ PNG screenshots (per test-case)
-    round-1.gif  round-10.gif   # Animated GIF per feature
+    screenshots/                  # PNG screenshots (per test-case)
+    round-1.gif  round-10.gif   # Animated GIFs — auth, streaming, tools, artifacts, upload, threads, memory, scroll, model selector, session
+    starting-screen-chips.gif    # Starting screen & suggestion chips
+    artifact-mermaid.gif          # Mermaid diagram artifact
+    artifact-drawio.gif           # Draw.io diagram artifact
+    skill-pdf.gif                 # PDF skill execution
+    skill-pptx.gif                # PPTX skill execution
+    skill-docx.gif                # DOCX skill execution
+    skill-xlsx.gif                # XLSX skill execution
+    skill-csv.gif                 # CSV skill execution
  public/
  Dockerfile
  next.config.ts                # output: standalone, BFF rewrites

@@ -6,8 +6,11 @@ import { ArtifactToolbar, ViewMode } from './artifact-toolbar';
 import { SandpackRenderer } from './renderers/sandpack-renderer';
 import { HtmlRenderer } from './renderers/html-renderer';
 import { MermaidRenderer } from './renderers/mermaid-renderer';
+import { DrawioRenderer } from './renderers/drawio-renderer';
 import { SvgRenderer } from './renderers/svg-renderer';
 import { CodeRenderer } from './renderers/code-renderer';
+import { FileRenderer } from './renderers/file-renderer';
+import { MarkdownRenderer } from '@/features/chat/components/markdown-renderer';
 import type { Artifact } from '@/types';
 import { useUiStore } from '@/stores/ui-store';
 
@@ -83,7 +86,22 @@ export function ArtifactPanel() {
       ? ((artifacts[activeArtifactId] as Artifact) ?? null)
       : null;
 
-  if (!artifact) return null;
+  if (!panelOpen) return null;
+
+  if (!artifact) {
+    return (
+      <aside
+        style={isMobile ? undefined : { width: panelWidth }}
+        className={`flex flex-col border-l border-chat-border bg-[#1A1A1A] ${
+          isMobile ? 'fixed inset-0 z-50 overflow-hidden' : 'relative shrink-0'
+        }`}
+      >
+        <div className="flex items-center justify-center flex-1">
+          <div className="w-5 h-5 border-2 border-stone-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      </aside>
+    );
+  }
 
   return (
     <aside
@@ -129,6 +147,11 @@ function ArtifactContent({
 }) {
   const content = artifact.content ?? '';
 
+  // File artifacts have no "code view" — always show the download card / PDF preview
+  if (artifact.type === 'file') {
+    return <FileRenderer artifact={artifact} />;
+  }
+
   // When in code view mode always show source
   if (viewMode === 'code') {
     const lang =
@@ -144,10 +167,16 @@ function ArtifactContent({
       return <HtmlRenderer key={refreshKey} html={content} />;
     case 'mermaid':
       return <MermaidRenderer key={refreshKey} code={content} />;
+    case 'drawio':
+      return <DrawioRenderer key={refreshKey} xml={content} refreshKey={refreshKey} />;
     case 'svg':
       return <SvgRenderer key={refreshKey} svg={content} />;
     case 'markdown':
-      return <CodeRenderer code={content} language="markdown" />;
+      return (
+        <div className="p-4 prose prose-invert max-w-none overflow-auto">
+          <MarkdownRenderer content={content} />
+        </div>
+      );
     case 'code':
     default:
       return <CodeRenderer code={content} language={artifact.language} />;

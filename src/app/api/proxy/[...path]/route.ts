@@ -105,6 +105,9 @@ async function forwardToBe(
   const accept = request.headers.get('accept');
   if (accept) headers['Accept'] = accept;
 
+  const lastEventId = request.headers.get('last-event-id');
+  if (lastEventId) headers['Last-Event-ID'] = lastEventId;
+
   const init: RequestInit = {
     method: request.method,
     headers,
@@ -212,6 +215,18 @@ async function handleRequest(
         'X-Accel-Buffering': 'no',
       },
     });
+  }
+
+  // Binary file — stream body directly to avoid UTF-8 corruption.
+  // Any response with Content-Disposition (attachment OR inline) is binary and must not be decoded as text.
+  const isBinary = beResponse.headers.get('content-disposition') !== null;
+  if (isBinary && beResponse.body) {
+    const dlHeaders = new Headers();
+    for (const h of ['content-type', 'content-disposition', 'content-length']) {
+      const v = beResponse.headers.get(h);
+      if (v) dlHeaders.set(h, v);
+    }
+    return new Response(beResponse.body, { status: beResponse.status, headers: dlHeaders });
   }
 
   const responseBody = beResponse.status !== 204 ? await beResponse.text() : null;

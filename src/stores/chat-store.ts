@@ -29,7 +29,7 @@ interface ChatState {
   setPendingMessage: (msg: PendingMessage | null) => void;
 
   setActiveThread: (id: number | null) => void;
-  startStream: (abortController: AbortController) => void;
+  startStream: (abortController: AbortController, optimisticMsg?: Message) => void;
   setStreamingSessionId: (id: string | null) => void;
   appendToken: (token: string) => void;
   addToolEvent: (event: StreamingToolEvent) => void;
@@ -82,9 +82,12 @@ export const useChatStore = create<ChatState>()(
         state.activeThreadId = id;
 
         if (isChangingThread && !isNewChatToThread) {
+          const preserveErrorOnNewChat = id === null && state.streamingStatus === 'error';
           // True thread switch — reset all streaming state
-          state.streamingStatus = 'idle';
-          state.streamingError = null;
+          if (!preserveErrorOnNewChat) {
+            state.streamingStatus = 'idle';
+            state.streamingError = null;
+          }
           state.streamingContent = '';
           state.streamingToolEvents = [];
           state.streamingArtifactIds = [];
@@ -104,14 +107,14 @@ export const useChatStore = create<ChatState>()(
       });
     },
 
-    startStream: (abortController) =>
+    startStream: (abortController, optimisticMsg) =>
       set((state) => {
         state.streamingStatus = 'streaming';
         state.streamingError = null;
         state.streamingContent = '';
         state.streamingToolEvents = [];
         state.streamingArtifactIds = [];
-        state.optimisticMessages = [];
+        state.optimisticMessages = optimisticMsg ? [optimisticMsg as unknown as Message] : [];
         state.abortController = abortController as unknown as AbortController;
         state.streamingSessionId = null;
       }),

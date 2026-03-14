@@ -15,6 +15,7 @@ interface ArtifactState {
   closePanel: () => void;
   addArtifact: (artifact: Artifact) => void;
   setArtifacts: (artifacts: Artifact[]) => void;
+  replaceArtifactsAndOpen: (artifacts: Artifact[], id: string) => void;
   clearArtifacts: () => void;
 
   startStreamingArtifact: (meta: StreamingArtifactMeta) => void;
@@ -53,6 +54,16 @@ export const useArtifactStore = create<ArtifactState>()(
         for (const artifact of artifacts) {
           state.artifacts[artifact.id] = artifact as unknown as Artifact;
         }
+      }),
+
+    replaceArtifactsAndOpen: (artifacts, id) =>
+      set((state) => {
+        state.artifacts = {};
+        for (const artifact of artifacts) {
+          state.artifacts[artifact.id] = artifact as unknown as Artifact;
+        }
+        state.activeArtifactId = id;
+        state.panelOpen = true;
       }),
 
     clearArtifacts: () =>

@@ -108,20 +108,36 @@ export const apiClient = {
 
 export interface StreamRequestBody {
   threadId?: number;
-  message: string;
+  message?: string;
   provider?: string;
   model?: string;
   fileIds?: number[];
   webSearch?: boolean;
+  sessionId?: string;
 }
 
 export async function createSseStream(
   body: StreamRequestBody,
   signal: AbortSignal,
+  lastEventId?: string,
 ): Promise<ReadableStreamDefaultReader<string>> {
-  const response = await fetch(`${getBffBase()}/api/proxy/chat/send`, {
+  const isResume = !!lastEventId || !!body.sessionId;
+  const url = isResume
+    ? `${getBffBase()}/api/proxy/chat/stream`
+    : `${getBffBase()}/api/proxy/chat/send`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'text/event-stream',
+  };
+
+  if (lastEventId) {
+    headers['Last-Event-ID'] = lastEventId;
+  }
+
+  const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+    headers,
     body: JSON.stringify({ ...body, stream: true }),
     credentials: 'include',
     signal,

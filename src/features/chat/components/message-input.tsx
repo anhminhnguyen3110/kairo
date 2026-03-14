@@ -1,6 +1,14 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect, KeyboardEvent } from 'react';
+import {
+  useRef,
+  useState,
+  useCallback,
+  useEffect,
+  forwardRef,
+  useImperativeHandle,
+  KeyboardEvent,
+} from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowUp, Square, Plus, Paperclip, Globe, X } from 'lucide-react';
 import { useChatStore } from '@/stores/chat-store';
@@ -26,6 +34,10 @@ interface MessageInputProps {
   threadId?: number;
   onNewThread?: (newThreadId: number) => void;
   variant?: 'centered' | 'bottom';
+}
+
+export interface MessageInputHandle {
+  submitWithPrompt: (text: string) => void;
 }
 
 function FileCardSmall({
@@ -92,7 +104,10 @@ function FileCardSmall({
   );
 }
 
-export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: MessageInputProps) {
+export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(function MessageInput(
+  { threadId, onNewThread, variant = 'bottom' },
+  ref,
+) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const plusMenuRef = useRef<HTMLDivElement>(null);
@@ -111,8 +126,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     setPendingMessage,
     setFileAttachments,
     setStreamError,
-    finalizeStream,
-    clearOptimisticMessages,
+    addOptimisticMessage,
   } = useChatStore();
   const { webSearchEnabled, toggleWebSearch } = useUiStore();
   const { send } = useStream();
@@ -158,6 +172,29 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
 
     // New thread: pre-create thread → upload files → navigate → auto-send
     setIsCreating(true);
+
+    // Show the user message immediately on the new-chat page while the thread is being created
+    addOptimisticMessage({
+      id: -Date.now(),
+      threadId: -1,
+      role: 'USER',
+      content: value,
+      toolCalls: null,
+      metadata:
+        filesToSend.length > 0
+          ? {
+              attachments: filesToSend.map((f) => ({
+                name: f.name,
+                sizeBytes: f.size,
+                mimeType: f.type,
+              })),
+            }
+          : null,
+      orderIndex: -1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+
     try {
       const newThread = await threadsApi.create();
 
@@ -178,8 +215,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
             setStreamError(
               `File "${file.name}" exceeds the ${MAX_SIZE_MB} MB upload limit. Please choose a smaller file.`,
             );
-            finalizeStream();
-            clearOptimisticMessages();
             setPendingFiles(filesToSend);
             if (el) {
               el.value = value;
@@ -202,8 +237,6 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
             setStreamError(
               'File upload failed. Please ensure the file is under 10 MB and try again.',
             );
-            finalizeStream();
-            clearOptimisticMessages();
             setPendingFiles(filesToSend);
             if (el) {
               el.value = value;
@@ -250,9 +283,22 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
     setPendingMessage,
     handleInput,
     setStreamError,
-    finalizeStream,
-    clearOptimisticMessages,
+    addOptimisticMessage,
   ]);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      submitWithPrompt(text: string) {
+        const el = textareaRef.current;
+        if (!el) return;
+        el.value = text;
+        handleInput();
+        void handleSubmit();
+      },
+    }),
+    [handleInput, handleSubmit],
+  );
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -520,7 +566,7 @@ export function MessageInput({ threadId, onNewThread, variant = 'bottom' }: Mess
       )}
     </div>
   );
-}
+});
 
 function SendButton({
   onSubmit,

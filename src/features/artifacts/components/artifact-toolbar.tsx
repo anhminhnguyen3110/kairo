@@ -57,6 +57,7 @@ export function ArtifactToolbar({
       react: 'jsx',
       html: 'html',
       mermaid: 'mmd',
+      drawio: 'drawio',
       svg: 'svg',
       markdown: 'md',
       code: 'txt',
@@ -77,7 +78,9 @@ export function ArtifactToolbar({
     artifact.type === 'html' ||
     artifact.type === 'react' ||
     artifact.type === 'mermaid' ||
-    artifact.type === 'svg';
+    artifact.type === 'drawio' ||
+    artifact.type === 'svg' ||
+    artifact.type === 'markdown';
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#2A2A2A] bg-[#1A1A1A] shrink-0">

@@ -4,7 +4,15 @@ export type MessageRole = 'USER' | 'ASSISTANT' | 'SYSTEM' | 'TOOL';
 
 export type FileStatus = 'PENDING' | 'PROCESSED' | 'FAILED';
 
-export type ArtifactType = 'html' | 'react' | 'mermaid' | 'svg' | 'code' | 'markdown';
+export type ArtifactType =
+  | 'html'
+  | 'react'
+  | 'mermaid'
+  | 'drawio'
+  | 'svg'
+  | 'code'
+  | 'markdown'
+  | 'file';
 
 export type TimeFrame = 'today' | 'yesterday' | 'previous7Days' | 'previous30Days' | 'older';
 

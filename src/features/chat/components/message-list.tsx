@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { useMessages } from '../hooks/use-messages';
+import { useStream } from '../hooks/use-stream';
 import { useChatStore } from '@/stores/chat-store';
 import { MessageBubble } from './message-bubble';
 import { StreamingBubble } from './streaming-bubble';
@@ -21,7 +22,32 @@ export function MessageList({ threadId, children }: MessageListProps) {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useMessages(threadId);
-  const { optimisticMessages, streamingStatus, streamingContent } = useChatStore();
+  const { optimisticMessages, streamingStatus } = useChatStore();
+  const { send } = useStream();
+
+  // Handle stream resume on initial load if the last message is from the user and has a sessionId
+  useEffect(() => {
+    if (isLoading || !data) return;
+    if (streamingStatus !== 'idle') return;
+
+    const messages = data.pages
+      .slice()
+      .reverse()
+      .flatMap((p) => [...p.data].reverse());
+
+    if (messages.length > 0) {
+      const lastMsg = messages[messages.length - 1];
+      if (lastMsg.role === 'USER' && lastMsg.metadata?.sessionId) {
+        // Automatically attempt to resume stream
+        send({
+          threadId,
+          message: '',
+          sessionId: lastMsg.metadata.sessionId as string,
+          isResume: true,
+        }).catch(console.error);
+      }
+    }
+  }, [isLoading, data, streamingStatus, threadId, send]);
 
   // Track whether the bottom sentinel is visible — if not, show the scroll button
   useEffect(() => {
@@ -55,7 +81,7 @@ export function MessageList({ threadId, children }: MessageListProps) {
     return () => observer.disconnect();
   }, [handleTopObserver]);
 
-  // Auto-scroll on each new streaming token — but only when already at the bottom
+  // Auto-scroll when status changes (e.g. new optimistic message) — but only when at bottom
   useEffect(() => {
     if (!isAtBottomRef.current) return;
     if (
@@ -65,7 +91,20 @@ export function MessageList({ threadId, children }: MessageListProps) {
     ) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [streamingContent, streamingStatus, optimisticMessages.length]);
+  }, [streamingStatus, optimisticMessages.length]);
+
+  // Auto-scroll on each streaming token WITHOUT re-rendering the whole component.
+  // Using store.subscribe avoids a component re-render on every token append.
+  useEffect(() => {
+    const unsub = useChatStore.subscribe((state, prevState) => {
+      if (state.streamingContent === prevState.streamingContent) return;
+      if (!isAtBottomRef.current) return;
+      if (state.streamingStatus === 'streaming') {
+        bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+    });
+    return unsub;
+  }, []);
 
   useEffect(() => {
     if (!isLoading) {
@@ -83,8 +122,13 @@ export function MessageList({ threadId, children }: MessageListProps) {
       .reverse()
       .flatMap((p) => [...p.data].reverse()) ?? [];
 
+  // Final defense: deduplicate allMessages by ID (real duplicates in cache)
+  const deduplicatedAllMessages = allMessages.filter(
+    (msg, index, arr) => arr.findIndex((m) => m.id === msg.id) === index,
+  );
+
   const deduplicatedOptimistic = optimisticMessages.filter(
-    (opt) => !allMessages.some((m) => m.role === opt.role && m.content === opt.content),
+    (opt) => !deduplicatedAllMessages.some((m) => m.role === opt.role && m.content === opt.content),
   );
 
   return (
@@ -100,17 +144,19 @@ export function MessageList({ threadId, children }: MessageListProps) {
           </div>
 
           {}
-          {!isLoading && allMessages.length === 0 && deduplicatedOptimistic.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-              <p className="text-2xl font-semibold text-stone-800 mb-2">
-                How can I help you today?
-              </p>
-              <p className="text-sm text-stone-400">Start a conversation below</p>
-            </div>
-          )}
+          {!isLoading &&
+            deduplicatedAllMessages.length === 0 &&
+            deduplicatedOptimistic.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-[50vh] text-center">
+                <p className="text-2xl font-semibold text-stone-800 mb-2">
+                  How can I help you today?
+                </p>
+                <p className="text-sm text-stone-400">Start a conversation below</p>
+              </div>
+            )}
 
           {}
-          {allMessages.map((message) => (
+          {deduplicatedAllMessages.map((message) => (
             <MessageBubble key={message.id} message={message} />
           ))}
 

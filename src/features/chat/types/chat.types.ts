@@ -18,10 +18,12 @@ export interface PendingMessage {
 
 export interface SendOptions {
   threadId?: number;
-  message: string;
+  message?: string;
   onNewThread?: (threadId: number) => void;
   files?: File[];
   fileIds?: number[];
+  sessionId?: string;
+  isResume?: boolean;
 }
 
 export interface SendMessagePayload {
