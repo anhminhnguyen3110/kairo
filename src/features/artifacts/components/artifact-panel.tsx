@@ -36,7 +36,6 @@ export function ArtifactPanel() {
   const startX = useRef(0);
   const startWidth = useRef(DEFAULT_WIDTH);
 
-  // Reset to preview whenever the active artifact changes (set-during-render avoids extra effect render)
   if (lastArtifactId !== activeArtifactId) {
     setLastArtifactId(activeArtifactId);
     setViewMode('preview');
@@ -55,7 +54,7 @@ export function ArtifactPanel() {
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging.current) return;
-      const delta = startX.current - e.clientX; // drag left → wider
+      const delta = startX.current - e.clientX;
       const newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, startWidth.current + delta));
       setPanelWidth(newWidth);
     };
@@ -116,7 +115,6 @@ export function ArtifactPanel() {
           className="absolute -left-1 top-0 bottom-0 w-2 z-10 cursor-col-resize select-none group"
           title="Drag to resize"
         >
-          {/* Visual indicator bar — centered on the border, invisible at rest */}
           <div className="absolute left-[3px] top-0 bottom-0 w-0.5 opacity-0 group-hover:opacity-100 group-hover:bg-[#CC785C]/70 group-active:bg-[#CC785C] transition-opacity" />
         </div>
       )}
@@ -147,12 +145,10 @@ function ArtifactContent({
 }) {
   const content = artifact.content ?? '';
 
-  // File artifacts have no "code view" — always show the download card / PDF preview
   if (artifact.type === 'file') {
     return <FileRenderer artifact={artifact} />;
   }
 
-  // When in code view mode always show source
   if (viewMode === 'code') {
     const lang =
       artifact.language ??

@@ -1,11 +1,6 @@
-/**
- * Unit tests for ModelSelector (fixes 5.11 — Escape closes dropdown,
- * and 5.16 — button disabled during streaming)
- */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 
-// ── mocks ────────────────────────────────────────────────────────────────────
 const mockSetSelection = vi.fn();
 let mockSelection: { provider: string; model: string; providerLabel: string } | null = null;
 let mockIsStreaming = false;
@@ -40,7 +35,6 @@ vi.mock('../hooks/use-models', () => ({
 vi.mock('@/lib/hooks/use-click-outside', () => ({
   useClickOutside: vi.fn(),
 }));
-// ────────────────────────────────────────────────────────────────────────────
 
 import { ModelSelector } from './model-selector';
 
@@ -56,7 +50,6 @@ describe('ModelSelector', () => {
   }
 
   function getTriggerButton() {
-    // The trigger button's title changes based on streaming state
     try {
       return screen.getByTitle('Select model');
     } catch {
@@ -64,7 +57,6 @@ describe('ModelSelector', () => {
     }
   }
 
-  // ── 5.16: disabled during streaming ────────────────────────────────────────
   describe('5.16 — button disabled during streaming', () => {
     it('trigger button is NOT disabled when idle', () => {
       mockIsStreaming = false;
@@ -99,17 +91,14 @@ describe('ModelSelector', () => {
     });
   });
 
-  // ── 5.11: Escape closes dropdown ───────────────────────────────────────────
   describe('5.11 — Escape key closes dropdown', () => {
     it('dropdown closes when Escape is pressed', () => {
       mockIsStreaming = false;
       renderSelector();
 
-      // Open the dropdown
       fireEvent.click(getTriggerButton());
       expect(screen.getByText('Provider')).toBeInTheDocument();
 
-      // Press Escape
       fireEvent.keyDown(document, { key: 'Escape', bubbles: true });
       expect(screen.queryByText('Provider')).not.toBeInTheDocument();
     });
@@ -118,10 +107,8 @@ describe('ModelSelector', () => {
       mockIsStreaming = false;
       renderSelector();
 
-      // Dropdown is closed
       expect(screen.queryByText('Provider')).not.toBeInTheDocument();
 
-      // Press Escape — should not throw
       expect(() => fireEvent.keyDown(document, { key: 'Escape', bubbles: true })).not.toThrow();
       expect(screen.queryByText('Provider')).not.toBeInTheDocument();
     });
@@ -138,7 +125,6 @@ describe('ModelSelector', () => {
     });
   });
 
-  // ── general open/close ──────────────────────────────────────────────────────
   describe('basic open/close behaviour', () => {
     it('shows provider list after clicking trigger when not streaming', () => {
       renderSelector();

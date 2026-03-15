@@ -34,7 +34,12 @@ export function StreamingBubble() {
     );
   }
 
-  if (streamingStatus !== 'streaming' && streamingStatus !== 'saving' && streamingStatus !== 'aborted') return null;
+  if (
+    streamingStatus !== 'streaming' &&
+    streamingStatus !== 'saving' &&
+    streamingStatus !== 'aborted'
+  )
+    return null;
 
   return (
     <div className="py-6">

@@ -20,7 +20,6 @@ vi.mock('@/lib/api-client', () => ({
   },
 }));
 
-// Mutable shared store state — mutate per test in beforeEach
 const storeState = {
   streamingContent: 'AI reply',
   optimisticMessages: [] as Message[],

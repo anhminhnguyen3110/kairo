@@ -66,7 +66,6 @@ export function ArtifactToolbar({
   const isPersistedArtifact = !isNaN(numericId) && numericId > 0;
   const downloadUrl = isPersistedArtifact ? artifactsApi.getDownloadUrl(numericId) : null;
 
-  // Version chain navigation
   const versionChain = buildVersionChain(artifact, artifacts);
   const currentVersionIdx = versionChain.findIndex((a) => a.id === artifact.id);
   const totalVersions = versionChain.length;
@@ -115,7 +114,6 @@ export function ArtifactToolbar({
 
   const typeLabel = TYPE_LABELS[artifact.type] ?? artifact.type;
 
-  // Determine whether preview mode makes sense for this type
   const hasPreview =
     artifact.type === 'html' ||
     artifact.type === 'react' ||
@@ -126,7 +124,6 @@ export function ArtifactToolbar({
 
   return (
     <div className="flex items-center gap-1.5 px-3 py-2 border-b border-[#2A2A2A] bg-[#1A1A1A] shrink-0">
-      {/* View mode toggle: only show if type has a visual preview */}
       {hasPreview && (
         <>
           <button
@@ -162,7 +159,6 @@ export function ArtifactToolbar({
       </span>
       <span className="shrink-0 text-sm text-stone-500">· {typeLabel}</span>
 
-      {/* Version navigation — only shown when multiple versions exist */}
       {totalVersions > 1 && (
         <>
           <div className="w-px h-4 bg-[#333333] mx-0.5" />
@@ -196,7 +192,6 @@ export function ArtifactToolbar({
 
       <div className="w-px h-4 bg-[#333333] mx-0.5" />
 
-      {/* Copy button + dropdown */}
       <div className="relative flex items-center">
         <button
           type="button"

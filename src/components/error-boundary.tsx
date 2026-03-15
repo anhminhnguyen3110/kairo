@@ -10,27 +10,10 @@ interface ErrorBoundaryState {
 
 interface ErrorBoundaryProps {
   children: ReactNode;
-  /** Custom fallback UI. Receives the caught error. */
   fallback?: (error: Error) => ReactNode;
-  /** Short label used in the default fallback message. */
   label?: string;
 }
 
-/**
- * Generic React Error Boundary (class component — required by React APIs).
- *
- * Catches render/lifecycle errors in the subtree and shows a graceful
- * fallback instead of letting a crash propagate to the root.
- *
- * Usage:
- *   <ErrorBoundary label="Streaming response">
- *     <StreamingBubble />
- *   </ErrorBoundary>
- *
- * The boundary resets when the user clicks "Try again", making it suitable
- * for recoverable failures (e.g. a single malformed SSE frame that causes a
- * render crash inside ToolEventCard).
- */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);

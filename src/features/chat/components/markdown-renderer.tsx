@@ -31,14 +31,12 @@ function preprocessContent(content: string): string {
 function CodeBlock({ language, code }: { language: string; code: string }) {
   return (
     <div className="group/code my-4 rounded-xl overflow-hidden border border-[#2D2D2D] bg-[#1E1E1E]">
-      {/* Header bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-[#161616] border-b border-[#2D2D2D]">
         <span className="text-[11px] font-mono font-medium text-stone-500 uppercase tracking-wider">
           {language || 'code'}
         </span>
         <CopyButton content={code} />
       </div>
-      {/* Syntax highlighted code */}
       <SyntaxHighlighter
         language={language || 'text'}
         style={oneDark}

@@ -10,13 +10,6 @@ interface MermaidRendererProps {
   code: string;
 }
 
-/**
- * Wraps the rendered SVG in a minimal, self-contained HTML page so it is
- * displayed inside a sandboxed iframe.  This fully isolates the diagram from
- * the app's global CSS / Tailwind resets (the same technique used by the
- * official mermaid-live-editor), which means mermaid's own theme styles
- * actually take effect instead of being overridden.
- */
 function buildSrcdoc(svg: string): string {
   return `<!DOCTYPE html>
 <html>
@@ -41,6 +34,17 @@ function buildSrcdoc(svg: string): string {
 </html>`;
 }
 
+function ErrorDisplay({ error }: { error: string }) {
+  return (
+    <div className="p-4 rounded-lg bg-red-900/20 border border-red-500/30 text-red-300">
+      <h3 className="font-bold text-red-400 mb-2">Diagram Error</h3>
+      <pre className="text-xs whitespace-pre-wrap font-mono bg-red-950/30 p-2 rounded">
+        {error}
+      </pre>
+    </div>
+  );
+}
+
 export function MermaidRenderer({ code }: MermaidRendererProps) {
   const [srcdoc, setSrcdoc] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -49,17 +53,20 @@ export function MermaidRenderer({ code }: MermaidRendererProps) {
     let cancelled = false;
     const id = `mermaid-${++_mermaidId}`;
 
-    mermaid
-      .render(id, code)
-      .then(({ svg }) => {
+    async function render() {
+      try {
+        const { svg } = await mermaid.render(id, code);
         if (!cancelled) {
           setSrcdoc(buildSrcdoc(svg));
           setError(null);
         }
-      })
-      .catch((err: Error) => {
-        if (!cancelled) setError(err.message);
-      });
+      } catch (e: unknown) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : String(e));
+        }
+      }
+    }
+    void render();
 
     return () => {
       cancelled = true;
@@ -67,16 +74,12 @@ export function MermaidRenderer({ code }: MermaidRendererProps) {
   }, [code]);
 
   if (error) {
-    return (
-      <div className="p-4 text-sm text-red-400 bg-red-950/40 rounded-md border border-red-800/50">
-        <strong>Diagram error:</strong> {error}
-      </div>
-    );
+    return <ErrorDisplay error={error} />;
   }
 
   if (!srcdoc) {
     return (
-      <div className="flex items-center justify-center w-full h-full text-sm text-neutral-500">
+      <div className="flex items-center justify-center p-8 text-stone-500">
         Rendering…
       </div>
     );

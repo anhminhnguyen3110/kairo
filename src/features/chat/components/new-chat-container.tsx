@@ -94,8 +94,6 @@ export function NewChatContainer() {
 
   useEffect(() => {
     return () => {
-      // Skip when navigating to a newly-created thread — pendingMessage is set
-      // and the optimistic message should persist until send() picks it up.
       if (!useChatStore.getState().pendingMessage) {
         clearOptimisticMessages();
       }

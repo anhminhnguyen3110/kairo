@@ -22,7 +22,7 @@ export function Sidebar() {
   useLayoutEffect(() => {
     const mq = window.matchMedia('(max-width: 767px)');
     const handle = (e: MediaQueryListEvent | MediaQueryList) => setIsMobile(e.matches);
-    handle(mq); // run immediately before paint to prevent flash
+    handle(mq);
     mq.addEventListener('change', handle as (e: MediaQueryListEvent) => void);
     return () => mq.removeEventListener('change', handle as (e: MediaQueryListEvent) => void);
   }, [setIsMobile]);
@@ -88,7 +88,6 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Action buttons */}
         <div className="w-full px-2 pb-2 space-y-1">
           <button
             type="button"
@@ -134,7 +133,6 @@ export function Sidebar() {
           </button>
         </div>
 
-        {/* Thread list or empty space */}
         {sidebarOpen ? (
           <div className="flex-1 overflow-y-auto sidebar-scroll px-2 pt-1 sidebar-content-appear">
             {isLoading ? (

@@ -3,7 +3,6 @@
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomOneDark } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 
-// Register commonly used languages (tree-shake unused ones)
 import js from 'react-syntax-highlighter/dist/esm/languages/hljs/javascript';
 import ts from 'react-syntax-highlighter/dist/esm/languages/hljs/typescript';
 import html from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';

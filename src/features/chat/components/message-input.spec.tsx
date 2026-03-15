@@ -1,11 +1,7 @@
-/**
- * Unit tests for file extension validation in MessageInput (fixes F12 / F13)
- */
 import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { render, fireEvent, act, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// ── heavy module mocks ───────────────────────────────────────────────────────
 const mockChatState = {
   streamingStatus: 'idle',
   streamingSessionId: null,
@@ -55,7 +51,6 @@ vi.mock('@/features/threads/api/threads-api', () => ({
 vi.mock('@/features/threads/hooks/use-threads', () => ({
   THREADS_QUERY_KEY: ['threads'],
 }));
-// ────────────────────────────────────────────────────────────────────────────
 
 import { MessageInput } from './message-input';
 
@@ -162,7 +157,6 @@ describe('MessageInput — file extension validation (F12 / F13)', () => {
       makeFile('bad.zip', 100, 'application/zip'),
       makeFile('also-bad.exe', 100, 'application/octet-stream'),
     ]);
-    // At least one invalid file → error shown
     expect(screen.queryByRole('alert')).not.toBeNull();
   });
 
@@ -269,14 +263,11 @@ describe('MessageInput — submit with pasted file', () => {
     const { container } = renderInput();
     const textarea = container.querySelector<HTMLTextAreaElement>('textarea')!;
 
-    // Create pasted file chip
     paste(textarea, 'Pasted content ' + 'x'.repeat(4001));
 
-    // Set textarea to non-empty so submit guard passes
     textarea.value = 'my message';
     fireEvent.input(textarea);
 
-    // Submit via Enter key
     await act(async () => {
       fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false });
     });
@@ -317,7 +308,6 @@ describe('MessageInput — submit with pasted file', () => {
     const textarea = container.querySelector<HTMLTextAreaElement>('textarea')!;
 
     paste(textarea, 'x'.repeat(4001));
-    // Leave textarea empty
     textarea.value = '';
     fireEvent.input(textarea);
 

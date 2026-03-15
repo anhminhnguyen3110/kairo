@@ -9,10 +9,6 @@ interface FileRendererProps {
   artifact: Artifact;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PDF Preview — fetch with auth, create blob URL, display in iframe
-// ─────────────────────────────────────────────────────────────────────────────
-
 function PdfPreview({ url, filename }: { url: string; filename: string }) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,11 +66,6 @@ function PdfPreview({ url, filename }: { url: string; filename: string }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// XLSX Preview — SheetJS renders each sheet to an HTML table in an srcdoc
-// iframe so the dark theme is self-contained and Tailwind can't bleed in.
-// ─────────────────────────────────────────────────────────────────────────────
 
 function buildXlsxSrcdoc(tableHtml: string): string {
   return `<!DOCTYPE html><html><head><meta charset="utf-8"><style>
@@ -168,11 +159,6 @@ function XlsxPreview({ url }: { url: string }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DOCX Preview — docx-preview renders the document into a div.
-// The library injects its own CSS (white page on grey background — intentional).
-// ─────────────────────────────────────────────────────────────────────────────
-
 function DocxPreview({ url }: { url: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
@@ -228,23 +214,13 @@ function DocxPreview({ url }: { url: string }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Image Preview — safe: scripts in SVG don't execute inside <img>
-// ─────────────────────────────────────────────────────────────────────────────
-
 function ImagePreview({ url, filename }: { url: string; filename: string }) {
   return (
     <div className="flex items-center justify-center h-full bg-[#141414] p-4 overflow-auto">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt={filename} className="max-w-full max-h-full object-contain" />
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Text / Code Preview — fetches raw content and renders in a scrollable <pre>
-// JSON gets pretty-printed automatically.
-// ─────────────────────────────────────────────────────────────────────────────
 
 function TextPreview({ url, filename }: { url: string; filename: string }) {
   const [content, setContent] = useState<string | null>(null);
@@ -281,7 +257,6 @@ function TextPreview({ url, filename }: { url: string; filename: string }) {
     try {
       displayContent = JSON.stringify(JSON.parse(content), null, 2);
     } catch {
-      /* use raw */
     }
   }
 
@@ -304,10 +279,6 @@ function TextPreview({ url, filename }: { url: string; filename: string }) {
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Generic download card (used for PPTX on localhost + unknown formats)
-// ─────────────────────────────────────────────────────────────────────────────
 
 function DownloadCard({
   filename,
@@ -355,10 +326,6 @@ function DownloadCard({
     </div>
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// File-type metadata used for the generic download card fallback
-// ─────────────────────────────────────────────────────────────────────────────
 
 type FileInfo = {
   label: string;
@@ -500,44 +467,36 @@ export function FileRenderer({ artifact }: FileRendererProps) {
   const downloadUrl =
     !isNaN(numericId) && numericId > 0 ? artifactsApi.getDownloadUrl(numericId) : null;
 
-  // artifact.content holds the filename (e.g. "Q4 2024 Sales Tracker.xlsx")
   const filename = artifact.content ?? artifact.title ?? 'file';
   const ext = filename.split('.').pop()?.toLowerCase() ?? '';
   const mimeType = artifact.language;
 
-  // PDF — fetch with auth then render via blob URL
   if ((ext === 'pdf' || mimeType === 'application/pdf') && downloadUrl) {
     return <PdfPreview url={downloadUrl} filename={filename} />;
   }
 
-  // XLSX / XLS — SheetJS table preview
   if ((ext === 'xlsx' || ext === 'xls' || mimeType?.includes('spreadsheet')) && downloadUrl) {
     return <XlsxPreview url={downloadUrl} />;
   }
 
-  // DOCX / DOC — docx-preview
   if ((ext === 'docx' || ext === 'doc' || mimeType?.includes('wordprocessingml')) && downloadUrl) {
     return <DocxPreview url={downloadUrl} />;
   }
 
-  // PPTX / PPT — PDF preview (converted on backend via LibreOffice)
   if ((ext === 'pptx' || ext === 'ppt' || mimeType?.includes('presentationml')) && downloadUrl) {
     const previewUrl = artifactsApi.getPreviewPdfUrl(numericId);
     return <PdfPreview url={previewUrl} filename={`${filename}.pdf`} />;
   }
 
-  // CSV — SheetJS parses it exactly like a spreadsheet
   if ((ext === 'csv' || mimeType === 'text/csv') && downloadUrl) {
     return <XlsxPreview url={downloadUrl} />;
   }
 
-  // Image files — safe browser-native rendering via <img>
   const imageExts = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'ico', 'svg', 'tiff', 'tif'];
   if ((imageExts.includes(ext) || mimeType?.startsWith('image/')) && downloadUrl) {
     return <ImagePreview url={downloadUrl} filename={filename} />;
   }
 
-  // Text / code files — fetch + render in a scrollable <pre>
   const textExts = [
     'txt',
     'md',
@@ -595,7 +554,6 @@ export function FileRenderer({ artifact }: FileRendererProps) {
     return <TextPreview url={downloadUrl} filename={filename} />;
   }
 
-  // Fallback — generic download card for zip, binaries, etc.
   const { label, iconColor, bgColor, Icon } = getFileInfo(filename, mimeType);
   return (
     <DownloadCard

@@ -25,7 +25,6 @@ export function MessageList({ threadId, children }: MessageListProps) {
   const { optimisticMessages, streamingStatus, lastAbortedSessionId } = useChatStore();
   const { send, resumeStream } = useStream();
 
-  // Handle stream resume on initial load if the last message is from the user and has a sessionId
   useEffect(() => {
     if (isLoading || !data) return;
     if (streamingStatus !== 'idle') return;
@@ -38,9 +37,7 @@ export function MessageList({ threadId, children }: MessageListProps) {
     if (messages.length > 0) {
       const lastMsg = messages[messages.length - 1];
       const sessionId = lastMsg.metadata?.sessionId as string | undefined;
-      // Skip auto-resume if: not a USER message, no sessionId, or session was intentionally aborted
       if (lastMsg.role === 'USER' && sessionId && sessionId !== lastAbortedSessionId) {
-        // Automatically attempt to resume stream
         send({
           threadId,
           message: '',
@@ -51,7 +48,6 @@ export function MessageList({ threadId, children }: MessageListProps) {
     }
   }, [isLoading, data, streamingStatus, threadId, send, lastAbortedSessionId]);
 
-  // Track whether the bottom sentinel is visible — if not, show the scroll button
   useEffect(() => {
     const el = bottomRef.current;
     if (!el) return;
@@ -83,7 +79,6 @@ export function MessageList({ threadId, children }: MessageListProps) {
     return () => observer.disconnect();
   }, [handleTopObserver]);
 
-  // Auto-scroll when status changes (e.g. new optimistic message) — but only when at bottom
   useEffect(() => {
     if (!isAtBottomRef.current) return;
     if (
@@ -95,8 +90,6 @@ export function MessageList({ threadId, children }: MessageListProps) {
     }
   }, [streamingStatus, optimisticMessages.length]);
 
-  // Auto-scroll on each streaming token WITHOUT re-rendering the whole component.
-  // Using store.subscribe avoids a component re-render on every token append.
   useEffect(() => {
     let timeoutId: NodeJS.Timeout | null = null;
     const unsub = useChatStore.subscribe((state, prevState) => {
@@ -133,7 +126,6 @@ export function MessageList({ threadId, children }: MessageListProps) {
       .reverse()
       .flatMap((p) => [...p.data].reverse()) ?? [];
 
-  // Final defense: deduplicate allMessages by ID (real duplicates in cache)
   const deduplicatedAllMessages = allMessages.filter(
     (msg, index, arr) => arr.findIndex((m) => m.id === msg.id) === index,
   );

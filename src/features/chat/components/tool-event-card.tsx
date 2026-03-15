@@ -43,19 +43,10 @@ function normalizeInput(raw: Record<string, unknown>): Record<string, unknown> {
   return raw;
 }
 
-/**
- * LangGraph's on_tool_end emits a ToolMessage object as `output`, not the raw
- * string returned by the tool. After JSON.stringify/parse round-trip through SSE,
- * LangChain's toJSON() produces the constructor serialization format:
- *   { lc: 1, type: "constructor", id: [..., "ToolMessage"], kwargs: { content: "<json>", ... } }
- *
- * This function handles all known shapes and returns the parsed tool output.
- */
 function normalizeOutput(output: unknown): unknown {
   if (output === undefined || output === null) return output;
   if (typeof output === 'object') {
     const obj = output as Record<string, unknown>;
-    // LangChain serialization format: { lc: 1, type: 'constructor', id: [...], kwargs: { content: "..." } }
     if (typeof obj.lc === 'number' && obj.kwargs && typeof obj.kwargs === 'object') {
       const kwargs = obj.kwargs as Record<string, unknown>;
       if (typeof kwargs.content === 'string') {
@@ -66,7 +57,6 @@ function normalizeOutput(output: unknown): unknown {
         }
       }
     }
-    // Also handle older lc_serializable format: { lc_serializable: true, lc_kwargs: { content: "..." } }
     if (obj.lc_serializable === true && obj.lc_kwargs && typeof obj.lc_kwargs === 'object') {
       const kwargs = obj.lc_kwargs as Record<string, unknown>;
       if (typeof kwargs.content === 'string') {
@@ -77,7 +67,6 @@ function normalizeOutput(output: unknown): unknown {
         }
       }
     }
-    // Plain ToolMessage shape (content or output field directly on the object)
     const raw =
       typeof obj.content === 'string'
         ? obj.content
@@ -91,7 +80,6 @@ function normalizeOutput(output: unknown): unknown {
         return raw;
       }
     }
-    // If neither field is a plain string, return the object itself
     return output;
   }
   if (typeof output === 'string') {
@@ -151,7 +139,6 @@ function FaviconImg({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
       alt={domain}

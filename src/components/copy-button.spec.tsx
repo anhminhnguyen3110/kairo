@@ -2,7 +2,6 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CopyButton } from './copy-button';
 
-// Provide a clipboard mock in jsdom (not available by default)
 const writeText = vi.fn().mockResolvedValue(undefined);
 Object.assign(navigator, { clipboard: { writeText } });
 
@@ -31,10 +30,8 @@ describe('CopyButton', () => {
       vi.useFakeTimers();
       const { unmount } = render(<CopyButton content="foo" />);
       fireEvent.click(screen.getByRole('button', { name: /copy/i }));
-      // Let the clipboard promise resolve
       vi.useRealTimers();
       await waitFor(() => expect(writeText).toHaveBeenCalled());
-      // component should still be in the DOM (not crashed)
       expect(screen.getByRole('button')).toBeInTheDocument();
       unmount();
     });

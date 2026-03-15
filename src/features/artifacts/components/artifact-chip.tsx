@@ -24,7 +24,6 @@ export function ArtifactChip({ artifactId, title, type }: ArtifactChipProps) {
 
   return (
     <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#1E1E1E] border border-[#2A2A2A] my-1.5 w-full">
-      {/* Info — non-clickable */}
       <div className="flex items-center gap-2.5 flex-1 min-w-0">
         <div className="w-9 h-9 rounded-lg bg-[#2A2A2A] border border-[#333333] flex items-center justify-center shrink-0">
           {type === 'mermaid' || type === 'svg' || type === 'code' ? (
@@ -41,7 +40,6 @@ export function ArtifactChip({ artifactId, title, type }: ArtifactChipProps) {
         </div>
       </div>
 
-      {/* View button */}
       <button
         type="button"
         onClick={() => openArtifact(artifactId)}

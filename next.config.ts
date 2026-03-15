@@ -4,18 +4,11 @@ import path from 'path';
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-
-  // Produces a standalone folder (with node_modules tree-shaken) for Docker.
-  // The runner image only needs .next/standalone + .next/static + public/.
   output: 'standalone',
-
-  // Silence multi-lockfile workspace root warning
   turbopack: {
     root: path.resolve(__dirname),
   },
 
-  // Proxy /api/v1 → NestJS BE in development
-  // In production, handled by BFF route handlers
   async rewrites() {
     if (process.env.NODE_ENV === 'development') {
       return [

@@ -161,7 +161,6 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
     setPendingFiles([]);
 
     if (threadId) {
-      // Existing thread: send directly
       send({
         threadId,
         message: value,
@@ -171,10 +170,8 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
       return;
     }
 
-    // New thread: pre-create thread → upload files → navigate → auto-send
     setIsCreating(true);
 
-    // Show the user message immediately on the new-chat page while the thread is being created
     addOptimisticMessage({
       id: -Date.now(),
       threadId: -1,
@@ -199,7 +196,6 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
     try {
       const newThread = await threadsApi.create();
 
-      // Pre-populate the per-thread cache so ThreadContainer renders instantly (no isLoading spinner)
       qc.setQueryData(['threads', newThread.id], newThread);
 
       const attachmentsMeta: {
@@ -250,21 +246,17 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
         void qc.invalidateQueries({ queryKey: ['files', newThread.id] });
       }
 
-      // Store pending message so ThreadContainer auto-sends after mount
       setPendingMessage({
         content: value,
         attachments: attachmentsMeta,
         ...(uploadedFileIds.length > 0 && { fileIds: uploadedFileIds }),
       });
 
-      // Refresh sidebar so the new thread appears immediately
       void qc.invalidateQueries({ queryKey: THREADS_QUERY_KEY });
 
-      // Navigate — ThreadContainer mounts, useEffect below picks up pendingMessage
       onNewThread?.(newThread.id);
     } catch (err) {
       console.error('[handleSubmit] Failed to create thread', err);
-      // Restore input on failure
       if (el) {
         el.value = value;
         handleInput();
@@ -316,22 +308,16 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
     [handleSubmit],
   );
 
-  // Auto-send once ThreadContainer mounts with the pre-created threadId.
-  // Read pendingMessage via getState() (not from stale closure) and clear it
-  // synchronously BEFORE send() to guard against React StrictMode double-invocation.
   useEffect(() => {
     if (!threadId) return;
     const pm = useChatStore.getState().pendingMessage;
     if (!pm) return;
     const { content, attachments, fileIds } = pm;
-    // Clear FIRST so StrictMode's second run sees null and bails out
     useChatStore.getState().setPendingMessage(null);
-    // Register attachment metadata before send() adds the optimistic message
     if (attachments.length > 0) {
       setFileAttachments(threadId, content, attachments);
     }
     send({ threadId, message: content, ...(fileIds?.length && { fileIds }) });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);
 
   const handleAbort = useCallback(() => {
@@ -339,18 +325,14 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
       abortSseStream(streamingSessionId).catch(() => null);
     }
     abortStream();
-    // invalidateQueries is handled by use-stream.ts after the AbortError is caught,
-    // waiting for the server-persisted partial message before clearing the bubble.
   }, [streamingSessionId, abortStream]);
 
   const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     let rejectionMessage: string | null = null;
     const valid = files.filter((f) => {
-      // Extension validation — reject unsupported types with a clear message
       const ext = '.' + (f.name.split('.').pop() ?? '').toLowerCase();
       if (!ACCEPTED_EXTENSIONS.has(ext)) {
-        // Distinguish images (no vision model) from other unsupported types
         const isImage = f.type.startsWith('image/');
         if (isImage) {
           rejectionMessage = `"${f.name}" is an image file. Image uploads are not supported — no vision model is configured. Supported: ${ACCEPTED}`;

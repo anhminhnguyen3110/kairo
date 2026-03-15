@@ -5,19 +5,11 @@ import { Copy, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface CopyButtonProps {
-  /** Text to be copied to clipboard */
   content: string;
-  /** Show text label alongside the icon; defaults to true */
   showLabel?: boolean;
   className?: string;
 }
 
-/**
- * Reusable clipboard copy button with visual feedback.
- *
- * Supports an icon-only mode (`showLabel={false}`) for compact contexts, and a
- * labelled mode (default) for code-block headers and similar larger surfaces.
- */
 export function CopyButton({ content, showLabel = true, className }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
@@ -27,7 +19,6 @@ export function CopyButton({ content, showLabel = true, className }: CopyButtonP
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
-      // clipboard write unavailable in non-secure contexts
     }
   }, [content]);
 

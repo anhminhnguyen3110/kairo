@@ -239,7 +239,6 @@ describe('abortSseStream', () => {
   });
 
   it('resolves without throwing even if fetch rejects (fire-and-forget)', async () => {
-    // abortSseStream internally awaits fetch but doesn't check ok — just awaits
     globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 500, json: vi.fn() });
     await expect(abortSseStream('sess-err')).resolves.toBeUndefined();
   });

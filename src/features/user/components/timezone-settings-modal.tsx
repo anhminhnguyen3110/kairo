@@ -5,7 +5,6 @@ import { X, Check, Globe } from 'lucide-react';
 import { useMe } from '../hooks/use-me';
 import { useUpdateProfile } from '../hooks/use-update-profile';
 
-/** A curated list of IANA timezones covering most users. */
 const COMMON_TIMEZONES = [
   { label: 'UTC', value: 'UTC' },
   { label: 'UTC-12 (Baker Island)', value: 'Etc/GMT+12' },

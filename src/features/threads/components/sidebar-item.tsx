@@ -21,14 +21,17 @@ export function SidebarItem({ thread }: SidebarItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState(thread.title);
+  const [prevTitle, setPrevTitle] = useState(thread.title);
+
+  if (thread.title !== prevTitle) {
+    setPrevTitle(thread.title);
+    if (!isRenaming) setRenameValue(thread.title);
+  }
+
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (!isRenaming) setRenameValue(thread.title);
-  }, [thread.title, isRenaming]);
   const setActiveThread = useChatStore((s) => s.setActiveThread);
 
   const { mutate: updateThread } = useUpdateThread();

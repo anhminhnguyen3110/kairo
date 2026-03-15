@@ -23,6 +23,7 @@ export function useStream() {
     updateToolEvent,
     updateToolEventThinking,
     appendToolInput,
+    appendToolOutput,
     addStreamingArtifactId,
     finalizeStream,
     setSavingStatus,
@@ -34,6 +35,64 @@ export function useStream() {
   const { selection } = useModelStore();
   const { webSearchEnabled } = useUiStore();
   const { addArtifact, openArtifact, replaceArtifactsAndOpen } = useArtifactStore();
+
+  const injectAndFinalizeStream = async (tid: number | undefined) => {
+    if (!tid) {
+      clearOptimisticMessages();
+      finalizeStream();
+      return;
+    }
+    await qc.cancelQueries({ queryKey: getMessagesQueryKey(tid) });
+    const currentContent = useChatStore.getState().streamingContent;
+    const currentToolEvents = useChatStore.getState().streamingToolEvents;
+    const currentOptimistic = useChatStore.getState().optimisticMessages;
+    
+    const toolCallsForCache = currentToolEvents.map((e) => ({
+      id: e.id,
+      name: e.name,
+      input: e.input,
+      output: e.output,
+    }));
+    
+    qc.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
+      getMessagesQueryKey(tid),
+      (old) => {
+        const toInject: Message[] = [];
+        if (currentContent || toolCallsForCache.length > 0) {
+          toInject.push({
+            id: -Date.now(),
+            threadId: tid,
+            role: 'ASSISTANT',
+            content: currentContent,
+            toolCalls: toolCallsForCache.length > 0 ? toolCallsForCache : null,
+            artifacts: undefined,
+            metadata: null,
+            orderIndex: Number.MAX_SAFE_INTEGER,
+            partial: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          } as Message);
+        }
+        const allCachedMessages = old?.pages?.flatMap((p) => p.data) ?? [];
+        for (const opt of [...currentOptimistic].reverse()) {
+          const alreadyInCache = allCachedMessages.some(
+            (m) => m.id > 0 && m.role === opt.role && m.content === opt.content,
+          );
+          if (!alreadyInCache) {
+            toInject.push({ ...opt, orderIndex: Number.MAX_SAFE_INTEGER - 1 } as Message);
+          }
+        }
+        if (!old?.pages?.length) {
+          return { pages: [{ data: toInject, meta: { hasMore: false, nextCursor: undefined } }], pageParams: [undefined] } as unknown as InfiniteData<PaginatedResponse<Message>>;
+        }
+        const [firstPage, ...rest] = old.pages;
+        return { ...old, pages: [{ ...firstPage, data: [...toInject, ...firstPage.data] }, ...rest] };
+      },
+    );
+    finalizeStream();
+    clearOptimisticMessages();
+    void qc.invalidateQueries({ queryKey: getMessagesQueryKey(tid), refetchType: 'none' });
+  };
 
   const send = async ({
     threadId,
@@ -55,8 +114,6 @@ export function useStream() {
         mimeType: f.type,
       }));
 
-      // Build the optimistic message and pass it into startStream atomically
-      // so there is never a render where streamingStatus='streaming' but optimisticMessages=[].
       const optimisticMsg: Message = {
         id: -Date.now(),
         threadId: threadId ?? -1,
@@ -78,7 +135,6 @@ export function useStream() {
             uploadResults.push(result);
           } catch (err) {
             console.warn('[send] File upload failed', f.name, err);
-            // Abort the entire send so the user knows the file was not attached.
             setStreamError(
               'File upload failed. Please ensure the file is under 10 MB and try again.',
             );
@@ -156,23 +212,13 @@ export function useStream() {
               const rawData = trimmed.slice('data:'.length).trim();
 
               if (rawData === '[DONE]') {
-                // Safety net: finalise if message_stop was never received (e.g. stream
-                // closed without a proper message_stop from the backend).
                 const { streamingStatus: s } = useChatStore.getState();
                 if (s === 'streaming' || s === 'saving') {
                   finalizeStream();
                   clearOptimisticMessages();
                 } else if (s === 'aborted') {
                   const tidDone = threadId ?? confirmedThreadId;
-                  const doFinalize = () => { clearOptimisticMessages(); finalizeStream(); };
-                  if (tidDone) {
-                    void qc.invalidateQueries({
-                      queryKey: getMessagesQueryKey(tidDone),
-                      refetchType: 'active',
-                    }).then(doFinalize).catch(doFinalize);
-                  } else {
-                    doFinalize();
-                  }
+                  void injectAndFinalizeStream(tidDone);
                 }
                 return;
               }
@@ -184,7 +230,10 @@ export function useStream() {
                 continue;
               }
 
-              if (useChatStore.getState().streamingStatus === 'aborted') { isDone = true; break; }
+              if (useChatStore.getState().streamingStatus === 'aborted') {
+                isDone = true;
+                break;
+              }
 
               switch (event.type) {
                 case 'ping':
@@ -243,6 +292,8 @@ export function useStream() {
                     updateToolEventThinking(String(cbdEvt.index), delta.thinking);
                   } else if (delta.type === 'input_json_delta' && delta.partial_json) {
                     appendToolInput(String(cbdEvt.index), delta.partial_json);
+                  } else if (delta.type === 'tool_output_delta' && delta.partial_json) {
+                    appendToolOutput(String(cbdEvt.index), delta.partial_json);
                   }
 
                   break;
@@ -293,8 +344,6 @@ export function useStream() {
 
                   let cacheInjected = false;
                   if (finalThreadId) {
-                    // Cancel any pending fetch so it doesn't resolve and overwrite our manual injection
-                    // with stale data fetched before the db transaction was fully committed.
                     await qc.cancelQueries({ queryKey: getMessagesQueryKey(finalThreadId) });
 
                     const currentContent = useChatStore.getState().streamingContent;
@@ -347,10 +396,6 @@ export function useStream() {
                         const allCachedMessages = old?.pages?.flatMap((p) => p.data) ?? [];
 
                         for (const opt of [...currentOptimistic].reverse()) {
-                          // Only treat as "already in cache" when a server-persisted message
-                          // (positive ID) matches — never when another optimistic message
-                          // (negative ID) has the same content, which can occur when the user
-                          // sends identical messages in sequence.
                           const alreadyInCache = allCachedMessages.some(
                             (m) => m.id > 0 && m.role === opt.role && m.content === opt.content,
                           );
@@ -362,7 +407,6 @@ export function useStream() {
                           }
                         }
 
-                        // Only set cacheInjected if we actually injected something
                         if (toInject.length > 0) {
                           cacheInjected = true;
                         }
@@ -392,9 +436,6 @@ export function useStream() {
                   clearOptimisticMessages();
 
                   if (finalThreadId) {
-                    // If the cache was empty when message_stop fired (race condition: stream
-                    // finished before useMessages loaded the page), trigger an active refetch so
-                    // the assistant reply appears immediately without requiring a manual reload.
                     void qc.invalidateQueries({
                       queryKey: getMessagesQueryKey(finalThreadId),
                       refetchType: cacheInjected ? 'none' : 'active',
@@ -403,7 +444,6 @@ export function useStream() {
                       queryKey: THREADS_QUERY_KEY,
                       refetchType: 'none',
                     });
-                    // Refresh the artifacts cache so the panel shows fresh server data
                     void qc.invalidateQueries({
                       queryKey: ['artifacts', finalThreadId],
                       refetchType: 'active',
@@ -431,12 +471,9 @@ export function useStream() {
                 }
 
                 case 'error': {
-                  // Ignore error events that arrive after a user-initiated abort
                   if (useChatStore.getState().streamingStatus === 'aborted') break;
                   const errEvt = event as unknown as { error: { message: string } };
                   const errMsg = errEvt.error?.message ?? 'An error occurred during streaming.';
-                  // "Stream aborted" / "Job aborted" are intentional abort signals from the BE;
-                  // they must never surface as error boxes to the user.
                   if (errMsg === 'Stream aborted' || errMsg === 'Job aborted before pickup') break;
                   console.error('[SSE] Error:', errMsg);
                   setStreamError(errMsg);
@@ -526,7 +563,7 @@ export function useStream() {
                   break;
               }
             }
-          } // end loop reader
+          }
         } catch (err: unknown) {
           if (err instanceof Error && err.name === 'AbortError') {
             isDone = true;
@@ -538,25 +575,15 @@ export function useStream() {
         } finally {
           reader?.releaseLock();
         }
-      } // end outer while(!isDone)
+      }
 
-      // Safety net: stream ended with done=true (backend closed the connection)
-      // without emitting message_stop — ensure we never get stuck in streaming.
       const { streamingStatus: sAfter } = useChatStore.getState();
       if (sAfter === 'streaming' || sAfter === 'saving') {
         finalizeStream();
         clearOptimisticMessages();
       } else if (sAfter === 'aborted') {
         const tidToInvalidate = threadId ?? confirmedThreadId;
-        const doFinalize = () => { clearOptimisticMessages(); finalizeStream(); };
-        if (tidToInvalidate) {
-          void qc.invalidateQueries({
-            queryKey: getMessagesQueryKey(tidToInvalidate),
-            refetchType: 'active',
-          }).then(doFinalize).catch(doFinalize);
-        } else {
-          doFinalize();
-        }
+        void injectAndFinalizeStream(tidToInvalidate);
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
@@ -579,20 +606,10 @@ export function useStream() {
         }
         setStreamError(errorMessage);
       } else {
-        // AbortError fallback path (rare: abort not caught by inner try/catch).
-        // Normal abort path is handled by the safety net above.
         const { streamingStatus: sFallback } = useChatStore.getState();
         if (sFallback === 'aborted') {
           const tidToInvalidate = threadId ?? confirmedThreadId;
-          const doFinalize = () => { clearOptimisticMessages(); finalizeStream(); };
-          if (tidToInvalidate) {
-            void qc.invalidateQueries({
-              queryKey: getMessagesQueryKey(tidToInvalidate),
-              refetchType: 'active',
-            }).then(doFinalize).catch(doFinalize);
-          } else {
-            doFinalize();
-          }
+          void injectAndFinalizeStream(tidToInvalidate);
         } else {
           finalizeStream();
           clearOptimisticMessages();
@@ -638,11 +655,7 @@ export function useStream() {
             if (s === 'streaming' || s === 'saving') {
               finalizeStream();
             } else if (s === 'aborted') {
-              const doFinalize = () => { clearOptimisticMessages(); finalizeStream(); };
-              void qc.invalidateQueries({
-                queryKey: getMessagesQueryKey(threadId),
-                refetchType: 'active',
-              }).then(doFinalize).catch(doFinalize);
+              void injectAndFinalizeStream(threadId);
             }
             return;
           }
@@ -694,6 +707,8 @@ export function useStream() {
                 updateToolEventThinking(String(cbdEvt.index), delta.thinking);
               else if (delta.type === 'input_json_delta' && delta.partial_json)
                 appendToolInput(String(cbdEvt.index), delta.partial_json);
+              else if (delta.type === 'tool_output_delta' && delta.partial_json)
+                appendToolOutput(String(cbdEvt.index), delta.partial_json);
               break;
             }
 
@@ -743,7 +758,12 @@ export function useStream() {
                 qc.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
                   getMessagesQueryKey(finalThreadId),
                   (old) => {
-                    if (!currentContent && toolCallsForCache.length === 0 && artifactsForCache.length === 0) return old;
+                    if (
+                      !currentContent &&
+                      toolCallsForCache.length === 0 &&
+                      artifactsForCache.length === 0
+                    )
+                      return old;
                     const toInject: Message[] = [
                       {
                         id: stop.message_id ?? -Date.now(),
@@ -763,7 +783,9 @@ export function useStream() {
                     ];
                     if (!old?.pages?.length) {
                       return {
-                        pages: [{ data: toInject, meta: { hasMore: false, nextCursor: undefined } }],
+                        pages: [
+                          { data: toInject, meta: { hasMore: false, nextCursor: undefined } },
+                        ],
                         pageParams: [undefined],
                       } as unknown as InfiniteData<PaginatedResponse<Message>>;
                     }
@@ -863,30 +885,26 @@ export function useStream() {
         }
       }
 
-      // Safety net
       const { streamingStatus: sAfter } = useChatStore.getState();
       if (sAfter === 'streaming' || sAfter === 'saving') {
         finalizeStream();
       } else if (sAfter === 'aborted') {
-        void qc.invalidateQueries({ queryKey: getMessagesQueryKey(threadId), refetchType: 'active' })
-          .then(() => { clearOptimisticMessages(); finalizeStream(); })
-          .catch(() => { clearOptimisticMessages(); finalizeStream(); });
+        void injectAndFinalizeStream(threadId);
       }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         let errorMessage = 'Something went wrong. Please try again.';
         if (err instanceof ApiClientError) {
-          errorMessage = err.statusCode >= 500
-            ? `Server error (${err.statusCode}). Please try again.`
-            : err.message || errorMessage;
+          errorMessage =
+            err.statusCode >= 500
+              ? `Server error (${err.statusCode}). Please try again.`
+              : err.message || errorMessage;
         }
         setStreamError(errorMessage);
       } else {
         const { streamingStatus: sFallback } = useChatStore.getState();
         if (sFallback === 'aborted') {
-          void qc.invalidateQueries({ queryKey: getMessagesQueryKey(threadId), refetchType: 'active' })
-            .then(() => { clearOptimisticMessages(); finalizeStream(); })
-            .catch(() => { clearOptimisticMessages(); finalizeStream(); });
+          void injectAndFinalizeStream(threadId);
         } else {
           finalizeStream();
         }

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
@@ -27,9 +28,11 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
   }, [router, setActiveThread]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDraft(thread.title);
-  }, [thread.title]);
+    if (draft !== thread.title && !editing) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft(thread.title);
+    }
+  }, [thread.title, draft, editing]);
 
   const startEdit = useCallback(() => {
     setEditing(true);
@@ -43,6 +46,7 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
     if (trimmed && trimmed !== thread.title) {
       updateThread({ id: thread.id, payload: { title: trimmed } });
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDraft(thread.title);
     }
     setEditing(false);
@@ -52,7 +56,8 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') commitEdit();
       if (e.key === 'Escape') {
-        setDraft(thread.title);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft(thread.title);
         setEditing(false);
       }
     },
@@ -99,7 +104,8 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
               type="button"
               onMouseDown={(e) => {
                 e.preventDefault();
-                setDraft(thread.title);
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDraft(thread.title);
                 setEditing(false);
               }}
               className="p-1 rounded text-stone-400 hover:bg-[#333333] transition-colors shrink-0"

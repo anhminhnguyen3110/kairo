@@ -13,13 +13,6 @@ import {
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
-// Dedup concurrent refresh calls within the same Node.js process.
-// When the access token expires, multiple parallel requests all hit 401 and
-// try to refresh simultaneously. Without dedup, each one would call BE with
-// the *same* refresh token. Since BE uses rotating tokens (old token deleted
-// on first use), only the first request would succeed and the rest would
-// delete both cookies, causing an unexpected logout.
-// Key: last 16 chars of the old refresh token (enough to identify it uniquely).
 const refreshInFlight = new Map<
   string,
   Promise<{ accessToken: string; refreshToken: string } | null>
@@ -82,15 +75,7 @@ async function forwardToBe(
   request: NextRequest | Request,
   beUrl: string,
   accessToken: string,
-  /** Pre-buffered body text. When provided, used instead of request.body so the
-   *  same payload can be re-sent on a 401 refresh-retry without draining the
-   *  original ReadableStream twice. */
   bufferedBody?: string | null,
-  /** AbortSignal propagated from the incoming request. When the browser
-   *  disconnects, this signal fires, which aborts the BFF→BE fetch and closes
-   *  the NestJS TCP connection so req.on('close') fires and SSE slots are
-   *  released. NOT passed on 401-retry calls to avoid aborting a healthy
-   *  re-connection. */
   signal?: AbortSignal | null,
 ): Promise<Response> {
   const contentType = request.headers.get('content-type') ?? '';
@@ -119,10 +104,8 @@ async function forwardToBe(
     if (isMultipart) {
       init.body = await request.formData();
     } else if (bufferedBody !== undefined && bufferedBody !== null) {
-      // Use pre-buffered string — safe to re-use for retries.
       init.body = bufferedBody;
     } else {
-      // Streaming body (only used on the very first attempt, not retries).
       init.body = request.body;
       (init as RequestInit & { duplex?: string }).duplex = 'half';
     }
@@ -154,27 +137,18 @@ async function handleRequest(
     accessToken = refreshed;
   }
 
-  // For non-GET/HEAD requests with a non-multipart body, buffer the body text
-  // so it can be safely re-sent on a 401 refresh-retry.
-  // (Streaming ReadableStream bodies can only be consumed once; a pre-read
-  // string can be passed to both the first attempt and any retry.)
   const contentType = request.headers.get('content-type') ?? '';
   const isMultipart = contentType.includes('multipart/form-data');
   const needsBodyBuffer =
     !['GET', 'HEAD'].includes(request.method) && !isMultipart && request.body !== null;
   const bufferedBody = needsBodyBuffer ? await request.text() : null;
 
-  // Pass request.signal so that if the browser disconnects while the SSE
-  // stream is open, the BFF→BE fetch is also aborted, closing the NestJS
-  // connection and allowing releaseSseSlot() to run in the finally block.
   const requestSignal = request.signal ?? null;
 
   let beResponse: Response;
   try {
     beResponse = await forwardToBe(request, beUrl, accessToken, bufferedBody, requestSignal);
   } catch (err) {
-    // If the client aborted (browser disconnect), propagate as-is — no need
-    // to return a 503 since the client is already gone.
     if (err instanceof Error && err.name === 'AbortError') {
       throw err;
     }
@@ -192,10 +166,6 @@ async function handleRequest(
     accessToken = newToken;
 
     try {
-      // Pass the same bufferedBody so the retry doesn't attempt to re-read
-      // an already-consumed ReadableStream.
-      // Note: do NOT pass requestSignal on retry — a new healthy connection
-      // should not be pre-aborted by a stale signal.
       beResponse = await forwardToBe(request, beUrl, accessToken, bufferedBody);
     } catch {
       return NextResponse.json(
@@ -219,8 +189,6 @@ async function handleRequest(
     });
   }
 
-  // Binary file — stream body directly to avoid UTF-8 corruption.
-  // Any response with Content-Disposition (attachment OR inline) is binary and must not be decoded as text.
   const isBinary = beResponse.headers.get('content-disposition') !== null;
   if (isBinary && beResponse.body) {
     const dlHeaders = new Headers();

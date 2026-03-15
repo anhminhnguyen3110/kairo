@@ -1,14 +1,7 @@
-/**
- * Unit tests for SuggestionPill onClick handler (fixes 4.02 / 4.15)
- *
- * Each pill should inject its starter prompt into the first <textarea> on the
- * page when clicked, so the user can immediately continue typing.
- */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// ── heavy module mocks ───────────────────────────────────────────────────────
 const mockChatState = {
   streamingStatus: 'idle',
   setStreamError: vi.fn(),
@@ -89,7 +82,6 @@ vi.mock('@/features/chat/components/streaming-bubble', () => ({
 vi.mock('@/features/chat/components/message-bubble', () => ({
   MessageBubble: () => null,
 }));
-// ────────────────────────────────────────────────────────────────────────────
 
 import { NewChatContainer } from './new-chat-container';
 

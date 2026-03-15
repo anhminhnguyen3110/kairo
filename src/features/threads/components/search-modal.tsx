@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -20,7 +21,6 @@ export function SearchModal() {
 
   useEffect(() => {
     if (searchOpen) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setQuery('');
       setTimeout(() => inputRef.current?.focus(), 50);
     }

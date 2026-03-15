@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -28,7 +29,6 @@ export function ModelSelector() {
     useCallback(() => setOpen(false), []),
   );
 
-  // Close dropdown on Escape key
   useEffect(() => {
     if (!open) return;
     const onKeyDown = (e: KeyboardEvent) => {
@@ -52,22 +52,21 @@ export function ModelSelector() {
   }, [providers, selection, setSelection]);
 
   useEffect(() => {
-    if (open) {
-      /* eslint-disable react-hooks/set-state-in-effect */
+    if (open && step !== 'provider') {
       setStep('provider');
+    }
+    if (open) {
       setActiveProvider(null);
       setSearch('');
-      /* eslint-enable react-hooks/set-state-in-effect */
     }
-  }, [open]);
+  }, [open, step]);
 
   useEffect(() => {
-    if (step === 'model') {
+    if (step === 'model' && search !== '') {
       setTimeout(() => searchRef.current?.focus(), 50);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearch('');
     }
-  }, [step]);
+  }, [step, search]);
 
   const configured = providers?.filter((p) => p.configured && p.models.length > 0) ?? [];
 

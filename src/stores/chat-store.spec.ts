@@ -148,7 +148,7 @@ describe('useChatStore', () => {
       useChatStore.getState().appendToolInput('t1', '{"q":');
       useChatStore.getState().appendToolInput('t1', '"hello"}');
       const evt = useChatStore.getState().streamingToolEvents[0];
-      expect(evt.input.input).toBe('{"q":"hello"}');
+      expect(evt.input).toEqual({ input: { q: 'hello' } });
     });
 
     it('handles appendToolInput for unknown event ID gracefully', () => {
@@ -186,7 +186,7 @@ describe('useChatStore', () => {
   describe('addStreamingArtifactId()', () => {
     it('adds a unique artifact ID', () => {
       useChatStore.getState().addStreamingArtifactId('uuid-1');
-      useChatStore.getState().addStreamingArtifactId('uuid-1'); // duplicate
+      useChatStore.getState().addStreamingArtifactId('uuid-1');
       expect(useChatStore.getState().streamingArtifactIds).toHaveLength(1);
     });
 

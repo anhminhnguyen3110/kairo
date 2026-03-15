@@ -25,7 +25,6 @@ interface ChatState {
 
   optimisticMessages: Message[];
 
-  /** Tracks the last user-aborted session so auto-resume skips it. */
   lastAbortedSessionId: string | null;
 
   pendingMessage: PendingMessage | null;
@@ -39,9 +38,10 @@ interface ChatState {
   updateToolEvent: (id: string, output: unknown) => void;
   updateToolEventThinking: (id: string, thought: string) => void;
   appendToolInput: (id: string, partialJson: string) => void;
+  appendToolOutput: (id: string, partialJson: string) => void;
   addStreamingArtifactId: (id: string) => void;
-  finalizeStream: () => void;
-  setSavingStatus: () => void;
+  finalizeStream: (finalMessage?: Message) => void;
+  setSavingStatus: (isSaving?: boolean) => void;
   abortStream: () => void;
   setStreamError: (message?: string) => void;
   addOptimisticMessage: (message: Message) => void;
@@ -87,7 +87,6 @@ export const useChatStore = create<ChatState>()(
 
         if (isChangingThread && !isNewChatToThread) {
           const preserveErrorOnNewChat = id === null && state.streamingStatus === 'error';
-          // True thread switch — reset all streaming state
           if (!preserveErrorOnNewChat) {
             state.streamingStatus = 'idle';
             state.streamingError = null;
@@ -163,8 +162,22 @@ export const useChatStore = create<ChatState>()(
       set((state) => {
         const event = state.streamingToolEvents.find((e) => e.id === id);
         if (event) {
-          const existing = typeof event.input.input === 'string' ? event.input.input : '';
-          event.input = { input: existing + partialJson };
+          const existing = (event.input.input as string) ?? '';
+          const combined = existing + partialJson;
+          try {
+            event.input = { input: JSON.parse(combined) };
+          } catch {
+            event.input = { input: combined };
+          }
+        }
+      }),
+
+    appendToolOutput: (id, partialJson) =>
+      set((state) => {
+        const event = state.streamingToolEvents.find((e) => e.id === id);
+        if (event) {
+          const existing = (event.output as string) ?? '';
+          event.output = existing + partialJson;
         }
       }),
 
@@ -175,7 +188,7 @@ export const useChatStore = create<ChatState>()(
         }
       }),
 
-    finalizeStream: () =>
+    finalizeStream: (_finalMessage) =>
       set((state) => {
         state.streamingStatus = 'idle';
         state.streamingError = null;
@@ -186,7 +199,7 @@ export const useChatStore = create<ChatState>()(
         state.streamingSessionId = null;
       }),
 
-    setSavingStatus: () =>
+    setSavingStatus: (_isSaving) =>
       set((state) => {
         state.streamingStatus = 'saving';
         state.abortController = null;
@@ -194,18 +207,11 @@ export const useChatStore = create<ChatState>()(
 
     abortStream: () => {
       const { abortController, streamingSessionId } = get();
-      // Set status BEFORE calling abort() so that any in-flight SSE error event
-      // sees streamingStatus === 'aborted' and skips showing the error box.
       set((state) => {
         state.streamingStatus = 'aborted';
-        // Keep streamingContent so StreamingBubble stays visible until real message loads
-        // Track the aborted sessionId so the auto-resume effect ignores it.
         state.lastAbortedSessionId = streamingSessionId;
         state.abortController = null;
         state.streamingSessionId = null;
-        // Immediately mark any mid-execution tool as done so the UI shows
-        // "Used ..." + checkmark instead of the spinner while we wait for the
-        // server-persisted message to load.
         state.streamingToolEvents = state.streamingToolEvents.map((e) =>
           e.status === 'pending' ? { ...e, status: 'done' } : e,
         );
