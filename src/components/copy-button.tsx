@@ -18,8 +18,7 @@ export function CopyButton({ content, showLabel = true, className }: CopyButtonP
       await navigator.clipboard.writeText(content);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-    } catch {
-    }
+    } catch {}
   }, [content]);
 
   if (!showLabel) {

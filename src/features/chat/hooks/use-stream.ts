@@ -46,49 +46,49 @@ export function useStream() {
     const currentContent = useChatStore.getState().streamingContent;
     const currentToolEvents = useChatStore.getState().streamingToolEvents;
     const currentOptimistic = useChatStore.getState().optimisticMessages;
-    
+
     const toolCallsForCache = currentToolEvents.map((e) => ({
       id: e.id,
       name: e.name,
       input: e.input,
       output: e.output,
     }));
-    
-    qc.setQueryData<InfiniteData<PaginatedResponse<Message>>>(
-      getMessagesQueryKey(tid),
-      (old) => {
-        const toInject: Message[] = [];
-        if (currentContent || toolCallsForCache.length > 0) {
-          toInject.push({
-            id: -Date.now(),
-            threadId: tid,
-            role: 'ASSISTANT',
-            content: currentContent,
-            toolCalls: toolCallsForCache.length > 0 ? toolCallsForCache : null,
-            artifacts: undefined,
-            metadata: null,
-            orderIndex: Number.MAX_SAFE_INTEGER,
-            partial: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          } as Message);
+
+    qc.setQueryData<InfiniteData<PaginatedResponse<Message>>>(getMessagesQueryKey(tid), (old) => {
+      const toInject: Message[] = [];
+      if (currentContent || toolCallsForCache.length > 0) {
+        toInject.push({
+          id: -Date.now(),
+          threadId: tid,
+          role: 'ASSISTANT',
+          content: currentContent,
+          toolCalls: toolCallsForCache.length > 0 ? toolCallsForCache : null,
+          artifacts: undefined,
+          metadata: null,
+          orderIndex: Number.MAX_SAFE_INTEGER,
+          partial: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Message);
+      }
+      const allCachedMessages = old?.pages?.flatMap((p) => p.data) ?? [];
+      for (const opt of [...currentOptimistic].reverse()) {
+        const alreadyInCache = allCachedMessages.some(
+          (m) => m.id > 0 && m.role === opt.role && m.content === opt.content,
+        );
+        if (!alreadyInCache) {
+          toInject.push({ ...opt, orderIndex: Number.MAX_SAFE_INTEGER - 1 } as Message);
         }
-        const allCachedMessages = old?.pages?.flatMap((p) => p.data) ?? [];
-        for (const opt of [...currentOptimistic].reverse()) {
-          const alreadyInCache = allCachedMessages.some(
-            (m) => m.id > 0 && m.role === opt.role && m.content === opt.content,
-          );
-          if (!alreadyInCache) {
-            toInject.push({ ...opt, orderIndex: Number.MAX_SAFE_INTEGER - 1 } as Message);
-          }
-        }
-        if (!old?.pages?.length) {
-          return { pages: [{ data: toInject, meta: { hasMore: false, nextCursor: undefined } }], pageParams: [undefined] } as unknown as InfiniteData<PaginatedResponse<Message>>;
-        }
-        const [firstPage, ...rest] = old.pages;
-        return { ...old, pages: [{ ...firstPage, data: [...toInject, ...firstPage.data] }, ...rest] };
-      },
-    );
+      }
+      if (!old?.pages?.length) {
+        return {
+          pages: [{ data: toInject, meta: { hasMore: false, nextCursor: undefined } }],
+          pageParams: [undefined],
+        } as unknown as InfiniteData<PaginatedResponse<Message>>;
+      }
+      const [firstPage, ...rest] = old.pages;
+      return { ...old, pages: [{ ...firstPage, data: [...toInject, ...firstPage.data] }, ...rest] };
+    });
     finalizeStream();
     clearOptimisticMessages();
     void qc.invalidateQueries({ queryKey: getMessagesQueryKey(tid), refetchType: 'none' });

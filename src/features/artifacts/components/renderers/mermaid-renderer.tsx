@@ -38,9 +38,7 @@ function ErrorDisplay({ error }: { error: string }) {
   return (
     <div className="p-4 rounded-lg bg-red-900/20 border border-red-500/30 text-red-300">
       <h3 className="font-bold text-red-400 mb-2">Diagram Error</h3>
-      <pre className="text-xs whitespace-pre-wrap font-mono bg-red-950/30 p-2 rounded">
-        {error}
-      </pre>
+      <pre className="text-xs whitespace-pre-wrap font-mono bg-red-950/30 p-2 rounded">{error}</pre>
     </div>
   );
 }
@@ -78,11 +76,7 @@ export function MermaidRenderer({ code }: MermaidRendererProps) {
   }
 
   if (!srcdoc) {
-    return (
-      <div className="flex items-center justify-center p-8 text-stone-500">
-        Rendering…
-      </div>
-    );
+    return <div className="flex items-center justify-center p-8 text-stone-500">Rendering…</div>;
   }
 
   return (

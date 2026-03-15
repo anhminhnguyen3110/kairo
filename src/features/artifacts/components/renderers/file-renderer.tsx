@@ -256,8 +256,7 @@ function TextPreview({ url, filename }: { url: string; filename: string }) {
   if (ext === 'json' && content) {
     try {
       displayContent = JSON.stringify(JSON.parse(content), null, 2);
-    } catch {
-    }
+    } catch {}
   }
 
   if (loading)

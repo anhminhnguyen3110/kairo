@@ -57,7 +57,7 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
       if (e.key === 'Enter') commitEdit();
       if (e.key === 'Escape') {
         // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDraft(thread.title);
+        setDraft(thread.title);
         setEditing(false);
       }
     },
@@ -105,7 +105,7 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
               onMouseDown={(e) => {
                 e.preventDefault();
                 // eslint-disable-next-line react-hooks/set-state-in-effect
-      setDraft(thread.title);
+                setDraft(thread.title);
                 setEditing(false);
               }}
               className="p-1 rounded text-stone-400 hover:bg-[#333333] transition-colors shrink-0"
