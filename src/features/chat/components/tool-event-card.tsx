@@ -139,6 +139,7 @@ function FaviconImg({
     );
   }
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`https://www.google.com/s2/favicons?domain=${domain}&sz=32`}
       alt={domain}

@@ -29,7 +29,6 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
 
   useEffect(() => {
     if (draft !== thread.title && !editing) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDraft(thread.title);
     }
   }, [thread.title, draft, editing]);
@@ -46,7 +45,6 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
     if (trimmed && trimmed !== thread.title) {
       updateThread({ id: thread.id, payload: { title: trimmed } });
     } else {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setDraft(thread.title);
     }
     setEditing(false);
@@ -56,7 +54,6 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
     (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key === 'Enter') commitEdit();
       if (e.key === 'Escape') {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDraft(thread.title);
         setEditing(false);
       }
@@ -104,7 +101,6 @@ export function ThreadHeader({ thread }: ThreadHeaderProps) {
               type="button"
               onMouseDown={(e) => {
                 e.preventDefault();
-                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setDraft(thread.title);
                 setEditing(false);
               }}

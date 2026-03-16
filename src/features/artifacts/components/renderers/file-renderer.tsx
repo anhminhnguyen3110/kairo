@@ -217,6 +217,7 @@ function DocxPreview({ url }: { url: string }) {
 function ImagePreview({ url, filename }: { url: string; filename: string }) {
   return (
     <div className="flex items-center justify-center h-full bg-[#141414] p-4 overflow-auto">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={url} alt={filename} className="max-w-full max-h-full object-contain" />
     </div>
   );

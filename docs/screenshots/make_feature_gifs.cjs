@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable @typescript-eslint/no-require-imports */
 // Creates one GIF per feature folder from all PNGs inside it.
 // GIFs are saved at docs/screenshots/{feature_name}.gif
 // Run: node make_feature_gifs.js  (from this directory)

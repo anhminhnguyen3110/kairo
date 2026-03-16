@@ -83,7 +83,8 @@ This means long-running agent tasks (file generation, multi-step research, code 
 
 Choose from 183+ models grouped by provider: OpenAI, Anthropic, Google, NVIDIA NIM, Meta, Mistral, and more. Live search filter inside the dropdown. Selection persists in `localStorage` and takes effect on the next message.
 
-![Model selector](docs/screenshots/model_selector.gif)
+![Model selector — provider list](docs/screenshots/model_selector/05_model_selector_open.png)
+![Model selector — model list](docs/screenshots/model_selector/06_model_list.png)
 
 ---
 
@@ -99,7 +100,7 @@ When the agent uses the `think` tool, an expandable scratchpad card appears inli
 
 Click the web search toggle in the input bar to enable it. The agent searches the web in real time and shows a tool card with the query and result snippets.
 
-![Web search](docs/screenshots/web_search.gif)
+![Web search results](docs/screenshots/web_search/44_web_search_results.png)
 
 ---
 
@@ -107,7 +108,7 @@ Click the web search toggle in the input bar to enable it. The agent searches th
 
 Ask the agent to build a web page or UI component. The artifact panel opens alongside the chat with a live iframe preview. Switch to the **Source code** tab to inspect the HTML.
 
-![HTML artifact](docs/screenshots/artifacts_html.gif)
+![HTML artifact](docs/screenshots/artifacts/html/26_html_artifact_panel_open.png)
 
 ---
 
@@ -115,7 +116,7 @@ Ask the agent to build a web page or UI component. The artifact panel opens alon
 
 Ask for a React component. The artifact panel renders it live in a Sandpack (CodeSandbox in-browser) sandbox with hot reload.
 
-![React artifact](docs/screenshots/artifacts_react.gif)
+![React artifact](docs/screenshots/artifacts/react/38_react_artifact_panel.png)
 
 ---
 
@@ -123,7 +124,7 @@ Ask for a React component. The artifact panel renders it live in a Sandpack (Cod
 
 Ask for a Markdown report or document. The artifact panel renders it with full GFM: tables, task lists, code fences with syntax highlighting, and blockquotes.
 
-![Markdown artifact](docs/screenshots/artifacts_markdown.gif)
+![Markdown artifact](docs/screenshots/artifacts/markdown/30_markdown_artifact_panel.png)
 
 ---
 
@@ -131,7 +132,7 @@ Ask for a Markdown report or document. The artifact panel renders it with full G
 
 Ask for a flowchart, sequence diagram, or any Mermaid chart. The panel renders it as an SVG using Mermaid.js.
 
-![Mermaid artifact](docs/screenshots/artifacts_mermaid.gif)
+![Mermaid artifact](docs/screenshots/artifacts/mermaid/32_mermaid_artifact.png)
 
 ---
 
@@ -139,7 +140,7 @@ Ask for a flowchart, sequence diagram, or any Mermaid chart. The panel renders i
 
 Ask for an SVG image or icon. The panel renders it inline.
 
-![SVG artifact](docs/screenshots/artifacts_svg.gif)
+![SVG artifact](docs/screenshots/artifacts/svg/40_svg_artifact_panel.png)
 
 ---
 
@@ -147,7 +148,7 @@ Ask for an SVG image or icon. The panel renders it inline.
 
 Ask for a Python script, TypeScript module, CSS stylesheet, or any code file. The panel renders it with syntax highlighting and a language label.
 
-![Code artifact](docs/screenshots/artifacts_code.gif)
+![Code artifact](docs/screenshots/artifacts/code/42_code_artifact_panel.png)
 
 ---
 
@@ -155,7 +156,7 @@ Ask for a Python script, TypeScript module, CSS stylesheet, or any code file. Th
 
 Ask for a system architecture diagram, network map, or any diagram supported by Draw.io. The panel renders it in an interactive embedded Draw.io editor.
 
-![DrawIO artifact](docs/screenshots/artifacts_drawio.gif)
+![DrawIO artifact](docs/screenshots/artifacts/drawio/02_drawio_artifact_panel.png)
 
 ---
 
@@ -172,7 +173,9 @@ When the agent generates a binary file (PDF, DOCX, XLSX, PPTX) via the Skills sy
 | **Images** | `<img>` with `object-contain` on dark background |
 | **Text / Code** | `<pre>` block; JSON is auto-pretty-printed |
 
-![File artifact and previews](docs/screenshots/artifacts_file.gif)
+![File artifact — PDF panel](docs/screenshots/artifacts/file/02_file_artifact_panel.png)
+![DOCX preview — Word document rendered inline](docs/screenshots/artifacts/file/03_docx_preview.png)
+![XLSX preview — spreadsheet table view](docs/screenshots/artifacts/file/04_xlsx_preview.png)
 
 ---
 
@@ -186,8 +189,8 @@ Toolbar actions:
 - **Download** artifact
 - **v1/N ◀ ▶** version navigation (shown when N > 1)
 
-![Artifact toolbar](docs/screenshots/artifact_toolbar.gif)
-![Artifact version history](docs/screenshots/artifact_versions.gif)
+![Artifact toolbar](docs/screenshots/artifact_toolbar/27_artifact_toolbar.png)
+![Artifact version history](docs/screenshots/artifact_versions/02_artifact_v2_toolbar.png)
 
 ---
 

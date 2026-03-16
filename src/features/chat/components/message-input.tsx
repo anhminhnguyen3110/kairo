@@ -318,6 +318,7 @@ export const MessageInput = forwardRef<MessageInputHandle, MessageInputProps>(fu
       setFileAttachments(threadId, content, attachments);
     }
     send({ threadId, message: content, ...(fileIds?.length && { fileIds }) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threadId]);
 
   const handleAbort = useCallback(() => {
