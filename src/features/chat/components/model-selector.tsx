@@ -52,14 +52,14 @@ export function ModelSelector() {
   }, [providers, selection, setSelection]);
 
   useEffect(() => {
-    if (open && step !== 'provider') {
+    if (!open) {
       setStep('provider');
     }
     if (open) {
       setActiveProvider(null);
       setSearch('');
     }
-  }, [open, step]);
+  }, [open]);
 
   useEffect(() => {
     if (step === 'model' && search !== '') {
